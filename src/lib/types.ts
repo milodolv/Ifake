@@ -1,0 +1,74 @@
+export type Sender = "me" | "contact";
+
+export type DelayMode = "auto" | "manual";
+
+export interface Message {
+  id: string;
+  content: string;
+  imageUrl?: string;
+  sender: Sender;
+  delayMode: DelayMode;
+  delayMs: number;
+  showTyping: boolean;
+  typingDurationMs: number;
+  showTimestamp: boolean;
+  timestampText: string;
+  timestampMode: "auto" | "manual";
+}
+
+export interface ConversationSettings {
+  contactName: string;
+  contactPhotoUrl?: string;
+  imessageDarkMode: boolean;
+  showStatusBar: boolean;
+  statusBarTime: string;
+  showReadReceipt: boolean;
+  readReceiptType: "delivered" | "read";
+  readReceiptTime: string;
+}
+
+export interface ConversationData {
+  settings: ConversationSettings;
+  messages: Message[];
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  created_at: string;
+  data: ConversationData;
+  user_id?: string;
+}
+
+export interface AnimationState {
+  visibleMessageIds: string[];
+  isTyping: boolean;
+  typingSender: Sender | null;
+  activeTimestamps: Record<string, string>;
+  showReadReceipt: boolean;
+  isPlaying: boolean;
+  isComplete: boolean;
+}
+
+export const DEFAULT_SETTINGS: ConversationSettings = {
+  contactName: "Contact",
+  imessageDarkMode: false,
+  showStatusBar: true,
+  statusBarTime: "9:41",
+  showReadReceipt: false,
+  readReceiptType: "read",
+  readReceiptTime: "14:32",
+};
+
+export const createDefaultMessage = (sender: Sender = "contact"): Message => ({
+  id: crypto.randomUUID(),
+  content: "",
+  sender,
+  delayMode: "auto",
+  delayMs: 1500,
+  showTyping: false,
+  typingDurationMs: 1200,
+  showTimestamp: false,
+  timestampText: "Aujourd'hui 14:32",
+  timestampMode: "auto",
+});
