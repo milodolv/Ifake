@@ -11,6 +11,8 @@ export interface Message {
   delayMs: number;
   showTyping: boolean;
   typingDurationMs: number;
+  showKeyboardTyping?: boolean;
+  typingSpeed?: "slow" | "normal" | "fast";
   showTimestamp: boolean;
   timestampText: string;
   timestampMode: "auto" | "manual";
@@ -50,6 +52,12 @@ export interface AnimationState {
   showReadReceipt: boolean;
   isPlaying: boolean;
   isComplete: boolean;
+  showKeyboard: boolean;
+  keyboardOpen: boolean;
+  draftText: string;
+  pressedKey: string | null;
+  showSendButton: boolean;
+  keyboardTargetText: string | null;
 }
 
 export const DEFAULT_SETTINGS: ConversationSettings = {
@@ -78,6 +86,8 @@ export const createDefaultMessage = (sender: Sender = "contact"): Message => ({
   delayMs: 1500,
   showTyping: false,
   typingDurationMs: 1200,
+  showKeyboardTyping: sender === "me",
+  typingSpeed: "normal",
   showTimestamp: false,
   timestampText: "Aujourd'hui 14:32",
   timestampMode: "auto",

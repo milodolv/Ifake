@@ -84,7 +84,14 @@ export function MessageConfigItem({
           <button
             key={sender}
             type="button"
-            onClick={() => updateMessage(message.id, { sender })}
+            onClick={() =>
+              updateMessage(message.id, {
+                sender,
+                ...(sender === "me"
+                  ? { showKeyboardTyping: true, showTyping: false }
+                  : {}),
+              })
+            }
             className={`flex-1 py-1.5 text-sm rounded-md transition ${
               message.sender === sender
                 ? sender === "me"
@@ -185,8 +192,11 @@ export function MessageConfigItem({
           className="accent-accent"
         />
         Indicateur de frappe
+        {message.sender === "me" && (
+          <span className="text-white/30 text-xs">(Contact uniquement)</span>
+        )}
       </label>
-      {message.showTyping && (
+      {message.showTyping && message.sender === "contact" && (
         <input
           type="number"
           value={message.typingDurationMs}
@@ -198,6 +208,51 @@ export function MessageConfigItem({
           className="w-full rounded bg-white/5 border border-white/10 px-2 py-1 text-white text-sm"
           placeholder="Durée frappe (ms)"
         />
+      )}
+
+      {message.sender === "me" && !message.imageUrl && (
+        <>
+          <label className="flex items-center gap-2 text-sm text-white/60">
+            <input
+              type="checkbox"
+              checked={message.showKeyboardTyping ?? true}
+              onChange={(e) =>
+                updateMessage(message.id, {
+                  showKeyboardTyping: e.target.checked,
+                })
+              }
+              className="accent-accent"
+            />
+            Animation de frappe clavier
+          </label>
+          {(message.showKeyboardTyping ?? true) && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-white/60">Vitesse de frappe</span>
+              <div className="flex gap-1">
+                {(["slow", "normal", "fast"] as const).map((speed) => (
+                  <button
+                    key={speed}
+                    type="button"
+                    onClick={() =>
+                      updateMessage(message.id, { typingSpeed: speed })
+                    }
+                    className={`px-2 py-0.5 text-xs rounded ${
+                      (message.typingSpeed ?? "normal") === speed
+                        ? "bg-accent/30 text-accent"
+                        : "bg-white/5 text-white/50"
+                    }`}
+                  >
+                    {speed === "slow"
+                      ? "Lent"
+                      : speed === "normal"
+                        ? "Normal"
+                        : "Rapide"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <label className="flex items-center gap-2 text-sm text-white/60">

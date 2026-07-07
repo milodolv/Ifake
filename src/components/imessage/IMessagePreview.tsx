@@ -9,6 +9,7 @@ import { TypingIndicator } from "./TypingIndicator";
 import { Timestamp } from "./Timestamp";
 import { ReadReceipt } from "./ReadReceipt";
 import { MessageInputBar } from "./MessageInputBar";
+import { IOSKeyboard, KEYBOARD_PANEL_HEIGHT } from "./IOSKeyboard";
 import { IMESSAGE } from "./theme";
 
 interface IMessagePreviewProps {
@@ -27,6 +28,7 @@ export function IMessagePreview({
   const visibleMessages = messages.filter((m) => visibleIds.includes(m.id));
   const dark = settings.imessageDarkMode;
   const bg = dark ? IMESSAGE.bgDark : IMESSAGE.bgLight;
+  const keyboardActive = animation.showKeyboard;
 
   const lastMeMessage = [...visibleMessages]
     .reverse()
@@ -37,11 +39,21 @@ export function IMessagePreview({
     !!lastMeMessage &&
     (!animation.isPlaying || animation.showReadReceipt);
 
-  // Ancrage en bas + scroll auto quand le fil dépasse
+  const hasDraft = animation.draftText.length > 0;
+  const showSend =
+    animation.showSendButton || (keyboardActive && hasDraft);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, visibleIds, animation.isTyping, showReceipt]);
+  }, [
+    messages,
+    visibleIds,
+    animation.isTyping,
+    showReceipt,
+    keyboardActive,
+    animation.draftText,
+  ]);
 
   return (
     <div
@@ -64,6 +76,9 @@ export function IMessagePreview({
         <div
           ref={scrollRef}
           className="absolute inset-0 overflow-y-auto overflow-x-hidden"
+          style={{
+            paddingBottom: keyboardActive ? KEYBOARD_PANEL_HEIGHT : undefined,
+          }}
         >
           <div
             style={{
@@ -148,7 +163,17 @@ export function IMessagePreview({
         />
       </div>
 
-      <MessageInputBar darkMode={dark} />
+      {!keyboardActive && <MessageInputBar darkMode={dark} />}
+
+      {keyboardActive && (
+        <IOSKeyboard
+          pressedKey={animation.pressedKey}
+          isOpen={animation.keyboardOpen}
+          draftText={animation.draftText}
+          showSend={showSend}
+          targetText={animation.keyboardTargetText}
+        />
+      )}
     </div>
   );
 }

@@ -9,6 +9,7 @@ import {
   AnimationState,
   normalizeSettings,
 } from "./types";
+import { DEFAULT_ANIMATION_STATE } from "./animationDefaults";
 
 interface EditorStore {
   settings: ConversationSettings;
@@ -25,21 +26,19 @@ interface EditorStore {
   loadConversation: (settings: ConversationSettings, messages: Message[]) => void;
 }
 
-const initialAnimation: AnimationState = {
-  visibleMessageIds: [],
-  isTyping: false,
-  typingSender: null,
-  activeTimestamps: {},
-  showReadReceipt: false,
-  isPlaying: false,
-  isComplete: false,
-};
+const initialAnimation: AnimationState = { ...DEFAULT_ANIMATION_STATE };
 
 export const useEditorStore = create<EditorStore>((set, get) => ({
   settings: { ...DEFAULT_SETTINGS },
   messages: [
-    { ...createDefaultMessage("contact"), content: "Salut ! Comment ça va ?" },
-    { ...createDefaultMessage("me"), content: "Très bien merci, et toi ?" },
+    {
+      ...createDefaultMessage("contact"),
+      content: "Salut ! Comment ça va ?",
+    },
+    {
+      ...createDefaultMessage("me"),
+      content: "Très bien merci, et toi ?",
+    },
   ],
   animation: { ...initialAnimation },
 

@@ -1,25 +1,22 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { useEditorStore, usePreviewAnimation } from "@/lib/store";
-import { playConversationAnimation } from "@/lib/animationEngine";
-import { playSound } from "@/lib/audioManager";
+import {
+  buildAnimationTimeline,
+  getStateAtTime,
+  TimelineKeyframe,
+} from "@/lib/animationTimeline";
 import {
   exportConversationVideo,
   shareOrDownloadVideo,
 } from "@/lib/videoExport";
 import { AnimationState } from "@/lib/types";
+import { DEFAULT_ANIMATION_STATE } from "@/lib/animationDefaults";
 import { IMessagePreview } from "@/components/imessage/IMessagePreview";
+import { AnimationPlaybackControls } from "./AnimationPlaybackControls";
 
-const emptyAnim: AnimationState = {
-  visibleMessageIds: [],
-  isTyping: false,
-  typingSender: null,
-  activeTimestamps: {},
-  showReadReceipt: false,
-  isPlaying: false,
-  isComplete: false,
-};
+const emptyAnim: AnimationState = { ...DEFAULT_ANIMATION_STATE };
 
 export function PreviewPanel() {
   const settings = useEditorStore((s) => s.settings);
@@ -28,32 +25,168 @@ export function PreviewPanel() {
   const previewAnimation = usePreviewAnimation();
 
   const exportPreviewRef = useRef<HTMLDivElement>(null);
+  const keyframesRef = useRef<TimelineKeyframe[]>([]);
+  const durationMsRef = useRef(0);
+  const currentTimeRef = useRef(0);
+  const playbackRateRef = useRef(1);
+  const pausedRef = useRef(false);
+  const playingRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
+  const lastFrameRef = useRef(0);
 
   const [displayAnimation, setDisplayAnimation] =
     useState<AnimationState>(emptyAnim);
   const [exportAnimation, setExportAnimation] =
     useState<AnimationState>(emptyAnim);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState("");
   const [exportedBlob, setExportedBlob] = useState<Blob | null>(null);
   const [exportedExt, setExportedExt] = useState("webm");
 
-  const handlePreview = useCallback(async () => {
-    setIsAnimating(true);
-    setDisplayAnimation({ ...emptyAnim, isPlaying: true });
-    setAnimation({ isPlaying: true, isComplete: false });
+  const [showControls, setShowControls] = useState(false);
+  const [currentMs, setCurrentMs] = useState(0);
+  const [durationMs, setDurationMs] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
 
-    await playConversationAnimation(messages, settings, {
-      onUpdate: (partial) => {
-        setDisplayAnimation((prev) => ({ ...prev, ...partial }));
-        setAnimation(partial);
-      },
-      onSound: (type) => playSound(type),
-    });
+  const stopLoop = useCallback(() => {
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, []);
 
-    setIsAnimating(false);
-  }, [messages, settings, setAnimation]);
+  const applyTime = useCallback(
+    (timeMs: number) => {
+      const state = getStateAtTime(keyframesRef.current, timeMs);
+      currentTimeRef.current = timeMs;
+      setCurrentMs(timeMs);
+      setDisplayAnimation(state);
+      setAnimation(state);
+    },
+    [setAnimation]
+  );
+
+  const tick = useCallback(
+    (now: number) => {
+      if (!playingRef.current) return;
+
+      if (!pausedRef.current) {
+        const delta = now - lastFrameRef.current;
+        lastFrameRef.current = now;
+        const next = Math.min(
+          currentTimeRef.current + delta * playbackRateRef.current,
+          durationMsRef.current
+        );
+        applyTime(next);
+
+        if (next >= durationMsRef.current) {
+          playingRef.current = false;
+          setIsPlaying(false);
+          setIsPaused(false);
+          return;
+        }
+      } else {
+        lastFrameRef.current = now;
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    },
+    [applyTime]
+  );
+
+  const startPlayback = useCallback(
+    (fromMs = 0) => {
+      stopLoop();
+      const { keyframes, durationMs: totalMs } = buildAnimationTimeline(
+        messages,
+        settings
+      );
+      keyframesRef.current = keyframes;
+      durationMsRef.current = totalMs;
+      setDurationMs(totalMs);
+      setShowControls(true);
+      playingRef.current = true;
+      setIsPlaying(true);
+      pausedRef.current = false;
+      setIsPaused(false);
+      applyTime(fromMs);
+      lastFrameRef.current = performance.now();
+      rafRef.current = requestAnimationFrame(tick);
+    },
+    [messages, settings, stopLoop, applyTime, tick]
+  );
+
+  useEffect(() => {
+    return () => stopLoop();
+  }, [stopLoop]);
+
+  useEffect(() => {
+    stopLoop();
+    playingRef.current = false;
+    setIsPlaying(false);
+    setIsPaused(false);
+    setShowControls(false);
+    setCurrentMs(0);
+    setDurationMs(0);
+    keyframesRef.current = [];
+  }, [messages, settings, stopLoop]);
+
+  const handlePreview = useCallback(() => {
+    startPlayback(0);
+  }, [startPlayback]);
+
+  const handleTogglePlayPause = useCallback(() => {
+    if (durationMsRef.current === 0) return;
+
+    const atEnd = currentTimeRef.current >= durationMsRef.current;
+
+    if (atEnd) {
+      startPlayback(0);
+      return;
+    }
+
+    if (playingRef.current && !pausedRef.current) {
+      pausedRef.current = true;
+      setIsPaused(true);
+      return;
+    }
+
+    if (pausedRef.current) {
+      pausedRef.current = false;
+      setIsPaused(false);
+      if (!playingRef.current) {
+        playingRef.current = true;
+        setIsPlaying(true);
+        lastFrameRef.current = performance.now();
+        rafRef.current = requestAnimationFrame(tick);
+      }
+      return;
+    }
+
+    startPlayback(currentTimeRef.current);
+  }, [startPlayback, tick]);
+
+  const handleSkipForward = useCallback(() => {
+    if (durationMsRef.current === 0) return;
+    const next = Math.min(
+      currentTimeRef.current + 10000,
+      durationMsRef.current
+    );
+    applyTime(next);
+    if (next >= durationMsRef.current) {
+      playingRef.current = false;
+      setIsPlaying(false);
+      setIsPaused(false);
+      stopLoop();
+    }
+  }, [applyTime, stopLoop]);
+
+  const handleSpeedChange = useCallback((rate: number) => {
+    playbackRateRef.current = rate;
+    setPlaybackRate(rate);
+  }, []);
 
   const handleExport = async () => {
     const el = exportPreviewRef.current;
@@ -101,9 +234,11 @@ export function PreviewPanel() {
   };
 
   const anim =
-    isAnimating || displayAnimation.isComplete
+    isPlaying || isPaused || displayAnimation.isComplete
       ? displayAnimation
       : previewAnimation;
+
+  const previewBusy = isPlaying && !isPaused;
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -132,11 +267,23 @@ export function PreviewPanel() {
         </div>
       </div>
 
+      <AnimationPlaybackControls
+        currentMs={currentMs}
+        durationMs={durationMs}
+        isPlaying={isPlaying}
+        isPaused={isPaused}
+        playbackRate={playbackRate}
+        visible={showControls}
+        onTogglePlayPause={handleTogglePlayPause}
+        onSkipForward={handleSkipForward}
+        onSpeedChange={handleSpeedChange}
+      />
+
       <div className="flex flex-wrap gap-2 justify-center">
         <button
           type="button"
           onClick={handlePreview}
-          disabled={isExporting || isAnimating}
+          disabled={isExporting || previewBusy}
           className="px-5 py-2.5 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/15 disabled:opacity-50"
         >
           Prévisualiser l&apos;animation
@@ -144,7 +291,7 @@ export function PreviewPanel() {
         <button
           type="button"
           onClick={handleExport}
-          disabled={isExporting || isAnimating}
+          disabled={isExporting || previewBusy}
           className="px-5 py-2.5 rounded-lg bg-accent text-white text-sm font-medium shadow-glow hover:bg-accent/90 disabled:opacity-50"
         >
           {isExporting ? "Export en cours…" : "Exporter en vidéo"}

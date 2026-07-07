@@ -3,6 +3,7 @@ import { playConversationAnimation } from "./animationEngine";
 import { createAudioDestination, scheduleSound } from "./audioManager";
 import { Message, ConversationSettings, AnimationState } from "./types";
 import { sleep } from "./utils";
+import { DEFAULT_ANIMATION_STATE } from "./animationDefaults";
 
 export const EXPORT_WIDTH = 1080;
 export const EXPORT_HEIGHT = 1920;
@@ -104,13 +105,8 @@ export async function exportConversationVideo(
 
   onProgress?.("Préparation de l'enregistrement…");
   onFrameUpdate?.({
-    visibleMessageIds: [],
-    isTyping: false,
-    typingSender: null,
-    activeTimestamps: {},
-    showReadReceipt: false,
+    ...DEFAULT_ANIMATION_STATE,
     isPlaying: true,
-    isComplete: false,
   });
 
   await sleep(200);
