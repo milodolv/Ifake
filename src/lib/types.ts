@@ -25,6 +25,8 @@ export interface ConversationSettings {
   showReadReceipt: boolean;
   readReceiptType: "delivered" | "read";
   readReceiptTime: string;
+  readReceiptDate: string;
+  readReceiptIsToday: boolean;
 }
 
 export interface ConversationData {
@@ -51,14 +53,22 @@ export interface AnimationState {
 }
 
 export const DEFAULT_SETTINGS: ConversationSettings = {
-  contactName: "Contact",
-  imessageDarkMode: false,
+  contactName: "Adonis",
+  imessageDarkMode: true,
   showStatusBar: true,
   statusBarTime: "9:41",
   showReadReceipt: false,
   readReceiptType: "read",
   readReceiptTime: "14:32",
+  readReceiptDate: "05/05/2026",
+  readReceiptIsToday: false,
 };
+
+export function normalizeSettings(
+  settings: Partial<ConversationSettings>
+): ConversationSettings {
+  return { ...DEFAULT_SETTINGS, ...settings };
+}
 
 export const createDefaultMessage = (sender: Sender = "contact"): Message => ({
   id: crypto.randomUUID(),

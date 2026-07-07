@@ -19,6 +19,21 @@ npm run dev
 
 Ouvrir [http://localhost:3000](http://localhost:3000).
 
+### Si le site affiche une erreur serveur
+
+```bash
+npm run fix
+```
+
+Puis rafraîchir avec **Cmd+Shift+R**.
+
+### Règles importantes
+
+- **Toujours** utiliser `npm run dev` (jamais `next dev` directement)
+- **Un seul** serveur à la fois — ne pas lancer plusieurs terminaux `npm run dev`
+- Le script tue automatiquement les anciens serveurs et vide le cache `.next` à chaque démarrage
+- URL : **http://localhost:3000** uniquement
+
 ## Configuration
 
 | Variable | Description |

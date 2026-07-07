@@ -1,24 +1,38 @@
 "use client";
 
+import { IMESSAGE } from "./theme";
+
 interface TypingIndicatorProps {
   darkMode: boolean;
 }
 
 export function TypingIndicator({ darkMode }: TypingIndicatorProps) {
-  const bg = darkMode ? "#3A3A3C" : "#E9E9EB";
+  const bg = darkMode
+    ? IMESSAGE.bubbleContactDark
+    : IMESSAGE.bubbleContactLight;
 
   return (
-    <div className="flex justify-start px-3 mb-1">
+    <div
+      className="flex justify-start w-full"
+      style={{ marginTop: IMESSAGE.spacingDiffSender }}
+    >
       <div
-        className="flex items-center gap-[5px] px-4 py-3 rounded-[18px]"
-        style={{ backgroundColor: bg }}
+        className="flex items-center"
+        style={{
+          backgroundColor: bg,
+          borderRadius: IMESSAGE.radiusBubble,
+          padding: "10px 14px",
+          gap: 5,
+        }}
       >
         {[0, 1, 2].map((i) => (
           <span
             key={i}
-            className="w-[7px] h-[7px] rounded-full animate-bounce"
+            className="rounded-full animate-bounce"
             style={{
-              backgroundColor: darkMode ? "#8E8E93" : "#8E8E93",
+              width: 7,
+              height: 7,
+              backgroundColor: IMESSAGE.textSecondary,
               animationDelay: `${i * 0.15}s`,
               animationDuration: "0.8s",
             }}

@@ -1,0 +1,32 @@
+---
+description: Règles serveur de dev — éviter les crashs Next.js
+alwaysApply: true
+---
+
+# Serveur de développement iFake
+
+## Problème connu
+L'erreur `Cannot find module './XXX.js'` vient d'un cache `.next` corrompu ou de plusieurs serveurs `next dev` en parallèle.
+
+## Règles OBLIGATOIRES pour l'agent
+
+1. **Ne jamais lancer `next dev` directement** — toujours `npm run dev`
+2. **Après toute modification de fichiers source**, relancer le serveur :
+   ```bash
+   npm run dev
+   ```
+3. **Ne jamais démarrer un second serveur** — un seul processus sur le port 3000
+4. Si l'utilisateur signale une erreur serveur, exécuter immédiatement :
+   ```bash
+   npm run fix
+   ```
+
+## Commandes disponibles
+| Commande | Usage |
+|---|---|
+| `npm run dev` | Démarre proprement (tue anciens serveurs + vide cache) |
+| `npm run fix` | Identique à `dev` — à utiliser quand ça casse |
+| `npm run kill-dev` | Arrête les serveurs sans redémarrer |
+
+## URL
+Toujours **http://localhost:3000** (pas 3001).

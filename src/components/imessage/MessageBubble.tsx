@@ -1,12 +1,57 @@
 "use client";
 
 import { Message } from "@/lib/types";
+import { IMESSAGE } from "./theme";
 
 interface MessageBubbleProps {
   message: Message;
   darkMode: boolean;
   isLastInGroup: boolean;
   isFirstInGroup: boolean;
+  sameSenderAsPrev: boolean;
+  isFirstInConversation?: boolean;
+}
+
+function BubbleTail({
+  color,
+  side,
+}: {
+  color: string;
+  side: "left" | "right";
+}) {
+  if (side === "right") {
+    return (
+      <span
+        aria-hidden
+        className="absolute pointer-events-none"
+        style={{
+          right: -5,
+          bottom: 0,
+          width: 16,
+          height: 16,
+          background: "transparent",
+          borderBottomLeftRadius: 14,
+          boxShadow: `-3px 0 0 0 ${color}`,
+        }}
+      />
+    );
+  }
+
+  return (
+    <span
+      aria-hidden
+      className="absolute pointer-events-none"
+      style={{
+        left: -5,
+        bottom: 0,
+        width: 16,
+        height: 16,
+        background: "transparent",
+        borderBottomRightRadius: 14,
+        boxShadow: `3px 0 0 0 ${color}`,
+      }}
+    />
+  );
 }
 
 export function MessageBubble({
@@ -14,40 +59,61 @@ export function MessageBubble({
   darkMode,
   isLastInGroup,
   isFirstInGroup,
+  sameSenderAsPrev,
+  isFirstInConversation = false,
 }: MessageBubbleProps) {
   const isMe = message.sender === "me";
 
   const bubbleBg = isMe
-    ? "#0A84FF"
+    ? IMESSAGE.blue
     : darkMode
-      ? "#3A3A3C"
-      : "#E9E9EB";
+      ? IMESSAGE.bubbleContactDark
+      : IMESSAGE.bubbleContactLight;
 
-  const textColor = isMe ? "#FFFFFF" : darkMode ? "#FFFFFF" : "#000000";
+  const textColor = isMe
+    ? "#FFFFFF"
+    : darkMode
+      ? "#FFFFFF"
+      : "#000000";
+
+  const r = IMESSAGE.radiusBubble;
+  const c = IMESSAGE.radiusBubbleChain;
 
   const radius = isMe
     ? {
-        borderTopLeftRadius: 18,
-        borderTopRightRadius: isFirstInGroup ? 18 : 6,
-        borderBottomLeftRadius: 18,
-        borderBottomRightRadius: isLastInGroup ? 18 : 6,
+        borderTopLeftRadius: r,
+        borderTopRightRadius: isFirstInGroup ? r : c,
+        borderBottomLeftRadius: r,
+        borderBottomRightRadius: isLastInGroup ? r : c,
       }
     : {
-        borderTopLeftRadius: isFirstInGroup ? 18 : 6,
-        borderTopRightRadius: 18,
-        borderBottomLeftRadius: isLastInGroup ? 18 : 6,
-        borderBottomRightRadius: 18,
+        borderTopLeftRadius: isFirstInGroup ? r : c,
+        borderTopRightRadius: r,
+        borderBottomLeftRadius: isLastInGroup ? r : c,
+        borderBottomRightRadius: r,
       };
+
+  const marginTop = sameSenderAsPrev
+    ? IMESSAGE.spacingSameSender
+    : isFirstInConversation
+      ? 0
+      : IMESSAGE.spacingDiffSender;
 
   return (
     <div
-      className={`flex mb-[2px] px-3 ${isMe ? "justify-end" : "justify-start"}`}
+      className={`flex w-full ${isMe ? "justify-end" : "justify-start"}`}
+      style={{ marginTop }}
     >
       <div
-        className="relative max-w-[75%] px-[14px] py-[8px] text-[17px] leading-[22px] break-words"
+        className="relative break-words"
         style={{
+          maxWidth: IMESSAGE.bubbleMaxWidth,
+          padding: `${IMESSAGE.bubblePaddingY}px ${IMESSAGE.bubblePaddingX}px`,
+          fontSize: IMESSAGE.bubbleFontSize,
+          lineHeight: `${IMESSAGE.bubbleLineHeight}px`,
           backgroundColor: bubbleBg,
           color: textColor,
+          letterSpacing: "-0.01em",
           ...radius,
         }}
       >
@@ -56,30 +122,15 @@ export function MessageBubble({
           <img
             src={message.imageUrl}
             alt=""
-            className="rounded-xl max-w-full"
+            className="rounded-2xl max-w-full"
             style={{ maxHeight: 200 }}
           />
         ) : (
           message.content
         )}
 
-        {/* Queue de bulle */}
         {isLastInGroup && (
-          <span
-            className="absolute bottom-0"
-            style={{
-              [isMe ? "right" : "left"]: -5,
-              width: 0,
-              height: 0,
-              borderStyle: "solid",
-              borderWidth: isMe ? "0 0 12px 10px" : "0 10px 12px 0",
-              borderColor: isMe
-                ? `transparent transparent ${bubbleBg} transparent`
-                : `transparent ${bubbleBg} transparent transparent`,
-              transform: isMe ? "rotate(-10deg)" : "rotate(10deg)",
-              opacity: 0.9,
-            }}
-          />
+          <BubbleTail color={bubbleBg} side={isMe ? "right" : "left"} />
         )}
       </div>
     </div>

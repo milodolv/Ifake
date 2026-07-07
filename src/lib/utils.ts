@@ -28,6 +28,23 @@ export function getAvatarColor(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
 
+const AVATAR_GRADIENTS = [
+  "linear-gradient(135deg, #BF5AF2 0%, #5E5CE6 100%)",
+  "linear-gradient(135deg, #FF6482 0%, #FF375F 100%)",
+  "linear-gradient(135deg, #64D2FF 0%, #0A84FF 100%)",
+  "linear-gradient(135deg, #30D158 0%, #34C759 100%)",
+  "linear-gradient(135deg, #FFD60A 0%, #FF9F0A 100%)",
+  "linear-gradient(135deg, #AC8E68 0%, #8E7CC3 100%)",
+];
+
+export function getAvatarGradient(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length];
+}
+
 export function formatDate(): string {
   const now = new Date();
   const hours = now.getHours().toString().padStart(2, "0");

@@ -7,6 +7,7 @@ import {
   DEFAULT_SETTINGS,
   createDefaultMessage,
   AnimationState,
+  normalizeSettings,
 } from "./types";
 
 interface EditorStore {
@@ -101,7 +102,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   loadConversation: (settings, messages) =>
     set({
-      settings,
+      settings: normalizeSettings(settings),
       messages,
       animation: {
         ...initialAnimation,

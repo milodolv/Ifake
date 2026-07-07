@@ -74,14 +74,38 @@ export function ConfigPanel() {
           </div>
         )}
         {settings.showReadReceipt && settings.readReceiptType === "read" && (
-          <input
-            value={settings.readReceiptTime}
-            onChange={(e) =>
-              setSettings({ readReceiptTime: e.target.value })
-            }
-            className="w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
-            placeholder="14:32"
-          />
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm text-white/60">
+              <input
+                type="checkbox"
+                checked={settings.readReceiptIsToday}
+                onChange={(e) =>
+                  setSettings({ readReceiptIsToday: e.target.checked })
+                }
+                className="accent-accent"
+              />
+              Lu aujourd&apos;hui (afficher l&apos;heure seule)
+            </label>
+            {settings.readReceiptIsToday ? (
+              <input
+                value={settings.readReceiptTime}
+                onChange={(e) =>
+                  setSettings({ readReceiptTime: e.target.value })
+                }
+                className="w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
+                placeholder="14:32"
+              />
+            ) : (
+              <input
+                value={settings.readReceiptDate}
+                onChange={(e) =>
+                  setSettings({ readReceiptDate: e.target.value })
+                }
+                className="w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
+                placeholder="05/05/2026"
+              />
+            )}
+          </div>
         )}
       </section>
 

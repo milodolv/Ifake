@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { ConversationSettings, Message, AnimationState } from "@/lib/types";
 import { StatusBar } from "./StatusBar";
 import { ConversationHeader } from "./ConversationHeader";
@@ -7,6 +8,8 @@ import { MessageBubble } from "./MessageBubble";
 import { TypingIndicator } from "./TypingIndicator";
 import { Timestamp } from "./Timestamp";
 import { ReadReceipt } from "./ReadReceipt";
+import { MessageInputBar } from "./MessageInputBar";
+import { IMESSAGE } from "./theme";
 
 interface IMessagePreviewProps {
   settings: ConversationSettings;
@@ -19,13 +22,26 @@ export function IMessagePreview({
   messages,
   animation,
 }: IMessagePreviewProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const visibleIds = animation.visibleMessageIds;
   const visibleMessages = messages.filter((m) => visibleIds.includes(m.id));
-  const bg = settings.imessageDarkMode ? "#000000" : "#FFFFFF";
+  const dark = settings.imessageDarkMode;
+  const bg = dark ? IMESSAGE.bgDark : IMESSAGE.bgLight;
 
   const lastMeMessage = [...visibleMessages]
     .reverse()
     .find((m) => m.sender === "me");
+
+  const showReceipt =
+    settings.showReadReceipt &&
+    !!lastMeMessage &&
+    (!animation.isPlaying || animation.showReadReceipt);
+
+  // Ancrage en bas + scroll auto quand le fil dépasse
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages, visibleIds, animation.isTyping, showReceipt]);
 
   return (
     <div
@@ -35,90 +51,104 @@ export function IMessagePreview({
         height: 844,
         backgroundColor: bg,
         fontFamily:
-          '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+          '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif',
+        WebkitFontSmoothing: "antialiased",
       }}
       data-export-target="true"
     >
       {settings.showStatusBar && (
-        <StatusBar
-          time={settings.statusBarTime}
-          darkMode={settings.imessageDarkMode}
-        />
+        <StatusBar time={settings.statusBarTime} darkMode={dark} />
       )}
 
-      <ConversationHeader
-        name={settings.contactName}
-        photoUrl={settings.contactPhotoUrl}
-        darkMode={settings.imessageDarkMode}
-      />
-
-      <div className="flex-1 overflow-hidden py-2">
-        {messages.map((message) => {
-          const ts = animation.activeTimestamps[message.id];
-          const isVisible = visibleIds.includes(message.id);
-
-          if (!isVisible && !ts) return null;
-
-          const visibleIndex = visibleMessages.indexOf(message);
-          const prev = visibleIndex > 0 ? visibleMessages[visibleIndex - 1] : null;
-          const next =
-            visibleIndex >= 0 && visibleIndex < visibleMessages.length - 1
-              ? visibleMessages[visibleIndex + 1]
-              : null;
-          const isFirstInGroup = !prev || prev.sender !== message.sender;
-          const isLastInGroup = !next || next.sender !== message.sender;
-
-          return (
-            <div key={message.id}>
-              {ts && (
-                <Timestamp
-                  text={ts}
-                  darkMode={settings.imessageDarkMode}
-                />
-              )}
-              {isVisible && (
-                <MessageBubble
-                  message={message}
-                  darkMode={settings.imessageDarkMode}
-                  isFirstInGroup={isFirstInGroup}
-                  isLastInGroup={isLastInGroup}
-                />
-              )}
-            </div>
-          );
-        })}
-
-        {animation.isTyping && animation.typingSender === "contact" && (
-          <TypingIndicator darkMode={settings.imessageDarkMode} />
-        )}
-      </div>
-
-      {animation.showReadReceipt && lastMeMessage && (
-        <ReadReceipt
-          type={settings.readReceiptType}
-          time={settings.readReceiptTime}
-          darkMode={settings.imessageDarkMode}
-        />
-      )}
-
-      <div
-        className="px-3 py-2 border-t flex items-center gap-2"
-        style={{
-          borderColor: settings.imessageDarkMode ? "#2C2C2E" : "#E5E5EA",
-          backgroundColor: settings.imessageDarkMode ? "#1C1C1E" : "#F2F2F7",
-        }}
-      >
+      <div className="flex-1 relative overflow-hidden min-h-0">
         <div
-          className="flex-1 rounded-full px-4 py-[7px] text-[17px]"
-          style={{
-            backgroundColor: settings.imessageDarkMode ? "#2C2C2E" : "#FFFFFF",
-            color: settings.imessageDarkMode ? "#8E8E93" : "#C7C7CC",
-            border: settings.imessageDarkMode ? "none" : "1px solid #E5E5EA",
-          }}
+          ref={scrollRef}
+          className="absolute inset-0 overflow-y-auto overflow-x-hidden"
         >
-          iMessage
+          <div
+            style={{
+              minHeight: "100%",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "flex-end",
+              paddingTop: IMESSAGE.headerHeight,
+              paddingBottom: 4,
+              paddingLeft: IMESSAGE.screenPaddingX,
+              paddingRight: IMESSAGE.screenPaddingX,
+              boxSizing: "border-box",
+            }}
+          >
+            {messages.map((message, msgIndex) => {
+              const ts = animation.activeTimestamps[message.id];
+              const isVisible = visibleIds.includes(message.id);
+
+              if (!isVisible && !ts) return null;
+
+              const visibleIndex = visibleMessages.indexOf(message);
+              const prev =
+                visibleIndex > 0 ? visibleMessages[visibleIndex - 1] : null;
+              const next =
+                visibleIndex >= 0 && visibleIndex < visibleMessages.length - 1
+                  ? visibleMessages[visibleIndex + 1]
+                  : null;
+              const isFirstInGroup =
+                !prev || prev.sender !== message.sender;
+              const isLastInGroup =
+                !next || next.sender !== message.sender;
+
+              const prevVisible = messages
+                .slice(0, msgIndex)
+                .reverse()
+                .find((m) => visibleIds.includes(m.id));
+              const sameSenderAsPrev =
+                isVisible &&
+                prevVisible !== undefined &&
+                prevVisible.sender === message.sender;
+
+              const isFirstInConversation =
+                isVisible && visibleIndex === 0;
+
+              return (
+                <div key={message.id}>
+                  {ts && <Timestamp text={ts} darkMode={dark} />}
+                  {isVisible && (
+                    <MessageBubble
+                      message={message}
+                      darkMode={dark}
+                      isFirstInGroup={isFirstInGroup}
+                      isLastInGroup={isLastInGroup}
+                      sameSenderAsPrev={!!sameSenderAsPrev}
+                      isFirstInConversation={isFirstInConversation}
+                    />
+                  )}
+                </div>
+              );
+            })}
+
+            {animation.isTyping && animation.typingSender === "contact" && (
+              <TypingIndicator darkMode={dark} />
+            )}
+
+            {showReceipt && (
+              <ReadReceipt
+                type={settings.readReceiptType}
+                time={settings.readReceiptTime}
+                date={settings.readReceiptDate}
+                isToday={settings.readReceiptIsToday}
+                darkMode={dark}
+              />
+            )}
+          </div>
         </div>
+
+        <ConversationHeader
+          name={settings.contactName}
+          photoUrl={settings.contactPhotoUrl}
+          darkMode={dark}
+        />
       </div>
+
+      <MessageInputBar darkMode={dark} />
     </div>
   );
 }
