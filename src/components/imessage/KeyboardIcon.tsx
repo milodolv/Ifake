@@ -2,6 +2,7 @@ import {
   KEYBOARD_ICON_CHARS,
   KeyboardIconName,
 } from "@/lib/keyboardIcons";
+import { IMESSAGE_FONT } from "./theme";
 
 interface KeyboardIconProps {
   name: KeyboardIconName;
@@ -52,8 +53,7 @@ export function KeyboardIcon({
   );
 }
 
-export const KEYBOARD_FONT =
-  'var(--font-inter), "SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif';
+export const KEYBOARD_FONT = IMESSAGE_FONT;
 
 export function Numeric123Label() {
   return (

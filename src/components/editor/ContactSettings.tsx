@@ -99,15 +99,88 @@ export function ContactSettings() {
       </div>
 
       {settings.showStatusBar && (
-        <div>
-          <label className="block text-xs text-white/50 mb-1">Heure</label>
-          <input
-            value={settings.statusBarTime}
-            onChange={(e) => setSettings({ statusBarTime: e.target.value })}
-            className="w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
-            placeholder="9:41"
-          />
-        </div>
+        <>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-white/60">Heure automatique</span>
+            <button
+              type="button"
+              onClick={() =>
+                setSettings({ statusBarLiveTime: !settings.statusBarLiveTime })
+              }
+              className={`w-11 h-6 rounded-full transition ${
+                settings.statusBarLiveTime ? "bg-accent" : "bg-white/20"
+              }`}
+            >
+              <span
+                className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                  settings.statusBarLiveTime ? "translate-x-5" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+
+          {!settings.statusBarLiveTime && (
+            <div>
+              <label className="block text-xs text-white/50 mb-1">
+                Heure manuelle
+              </label>
+              <input
+                value={settings.statusBarTime}
+                onChange={(e) =>
+                  setSettings({ statusBarTime: e.target.value })
+                }
+                className="w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
+                placeholder="00:08"
+              />
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-white/60">Batterie automatique</span>
+            <button
+              type="button"
+              onClick={() =>
+                setSettings({
+                  statusBarBatteryAuto: !settings.statusBarBatteryAuto,
+                })
+              }
+              className={`w-11 h-6 rounded-full transition ${
+                settings.statusBarBatteryAuto ? "bg-accent" : "bg-white/20"
+              }`}
+            >
+              <span
+                className={`block w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                  settings.statusBarBatteryAuto
+                    ? "translate-x-5"
+                    : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+
+          {!settings.statusBarBatteryAuto && (
+            <div>
+              <label className="block text-xs text-white/50 mb-1">
+                Niveau batterie (%)
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={settings.statusBarBatteryLevel}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  if (!Number.isFinite(value)) return;
+                  setSettings({
+                    statusBarBatteryLevel: Math.max(0, Math.min(100, value)),
+                  });
+                }}
+                className="w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
+                placeholder="75"
+              />
+            </div>
+          )}
+        </>
       )}
     </section>
   );

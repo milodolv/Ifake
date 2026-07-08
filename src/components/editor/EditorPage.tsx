@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { ConfigPanel } from "./ConfigPanel";
 import { PreviewPanel } from "./PreviewPanel";
+import { ClientSessionInitializer } from "./ClientSessionInitializer";
 
 export function EditorPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <ClientSessionInitializer />
       <header className="border-b border-white/10 px-4 py-3 flex items-center justify-between shrink-0">
         <Link href="/" className="text-lg font-bold text-white">
           iFake

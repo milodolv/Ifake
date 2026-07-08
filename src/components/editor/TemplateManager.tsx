@@ -14,6 +14,7 @@ export function TemplateManager() {
   const settings = useEditorStore((s) => s.settings);
   const messages = useEditorStore((s) => s.messages);
   const loadConversation = useEditorStore((s) => s.loadConversation);
+  const newConversation = useEditorStore((s) => s.newConversation);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [showList, setShowList] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -104,6 +105,14 @@ export function TemplateManager() {
         Templates
       </h3>
       <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={newConversation}
+          disabled={loading}
+          className="flex-1 py-2 text-sm rounded-md bg-white/10 text-white hover:bg-white/15"
+        >
+          Nouvelle
+        </button>
         <button
           type="button"
           onClick={handleSave}

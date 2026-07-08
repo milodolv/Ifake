@@ -1,16 +1,189 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { formatTime24 } from "@/lib/formatTime24";
+import { STATUS_BAR_TIME_FONT } from "./theme";
+import { StatusBarIcon } from "./StatusBarIcon";
+
 interface StatusBarProps {
   time: string;
   darkMode: boolean;
+  useLiveTime?: boolean;
+  batteryLevel: number;
 }
 
-export function StatusBar({ time, darkMode }: StatusBarProps) {
+function useLiveTime24(enabled: boolean, fallback: string): string {
+  const [liveTime, setLiveTime] = useState(fallback);
+
+  useEffect(() => {
+    if (!enabled) {
+      setLiveTime(fallback);
+      return;
+    }
+
+    const update = () => setLiveTime(formatTime24());
+    update();
+
+    const now = new Date();
+    const msUntilNextMinute =
+      (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const timeoutId = setTimeout(() => {
+      update();
+      intervalId = setInterval(update, 60_000);
+    }, msUntilNextMinute);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [enabled, fallback]);
+
+  return liveTime;
+}
+
+const TIME_STYLE = {
+  fontFamily: STATUS_BAR_TIME_FONT,
+  fontSize: 17,
+  fontWeight: 800,
+  fontVariationSettings: '"wght" 800',
+  lineHeight: 1,
+  fontVariantNumeric: "tabular-nums" as const,
+  fontFeatureSettings: '"tnum"',
+  WebkitFontSmoothing: "antialiased" as const,
+  display: "inline-flex" as const,
+  alignItems: "baseline" as const,
+  transform: "scaleY(1.035)",
+  transformOrigin: "left bottom",
+};
+
+function StatusBarTime({
+  time,
+  color,
+}: {
+  time: string;
+  color: string;
+}) {
+  const [hours, minutes] = time.split(":");
+
+  if (minutes === undefined) {
+    return (
+      <span
+        style={{
+          ...TIME_STYLE,
+          WebkitTextStroke: `0.15px ${color}`,
+          paintOrder: "stroke fill",
+          letterSpacing: "-0.038em",
+          color,
+        }}
+      >
+        {time}
+      </span>
+    );
+  }
+
+  const digitStyle = {
+    WebkitTextStroke: `0.15px ${color}`,
+    paintOrder: "stroke fill" as const,
+    letterSpacing: "-0.038em",
+    color,
+  };
+
+  return (
+    <span style={{ ...TIME_STYLE, color }}>
+      <span style={digitStyle}>{hours}</span>
+      <span
+        aria-hidden
+        style={{
+          ...digitStyle,
+          display: "inline-block",
+          transform: "translateY(-1px)",
+          letterSpacing: 0,
+        }}
+      >
+        :
+      </span>
+      <span style={digitStyle}>{minutes}</span>
+    </span>
+  );
+}
+
+const STATUS_ICON_SIZE = 15;
+const STATUS_ICON_GAP_CELLULAR_WIFI = 11;
+const STATUS_ICON_GAP_WIFI_BATTERY = 8;
+
+function StatusBarBattery({
+  level,
+  darkMode,
+}: {
+  level: number;
+  darkMode: boolean;
+}) {
+  const clamped = Math.max(0, Math.min(100, Math.round(level)));
+  const fillColor = darkMode ? "#FFFFFF" : "#000000";
+  const outlineColor = darkMode
+    ? "rgba(255, 255, 255, 0.35)"
+    : "rgba(0, 0, 0, 0.35)";
+  const innerX = 2;
+  const innerY = 2;
+  const innerWidth = 19;
+  const innerHeight = 9;
+  const fillWidth = Math.max(2.5, (clamped / 100) * innerWidth);
+  const height = STATUS_ICON_SIZE;
+  const width = 32;
+
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox="0 0 28 13"
+      fill="none"
+      aria-hidden
+      style={{ display: "block" }}
+    >
+      <rect
+        x="0.5"
+        y="0.5"
+        width="23"
+        height="12"
+        rx="3.5"
+        stroke={outlineColor}
+        strokeWidth="1"
+      />
+      <rect
+        x={innerX}
+        y={innerY}
+        width={fillWidth}
+        height={innerHeight}
+        rx="2"
+        fill={fillColor}
+      />
+      <rect
+        x="24.5"
+        y="4.25"
+        width="2"
+        height="4.5"
+        rx="1"
+        fill={outlineColor}
+      />
+    </svg>
+  );
+}
+
+export function StatusBar({
+  time,
+  darkMode,
+  useLiveTime = true,
+  batteryLevel,
+}: StatusBarProps) {
+  const liveTime = useLiveTime24(useLiveTime, time);
+  const displayTime = useLiveTime ? liveTime : time;
   const c = darkMode ? "#FFFFFF" : "#000000";
 
   return (
     <div
-      className="shrink-0 relative flex items-end justify-between"
+      className="shrink-0 flex items-end justify-between"
       style={{
         height: 54,
         paddingLeft: 27,
@@ -19,63 +192,33 @@ export function StatusBar({ time, darkMode }: StatusBarProps) {
         color: c,
       }}
     >
-      <span
-        style={{
-          fontSize: 16,
-          fontWeight: 600,
-          letterSpacing: "-0.02em",
-          lineHeight: 1,
-        }}
-      >
-        {time}
-      </span>
+      <StatusBarTime time={displayTime} color={c} />
 
       <div
-        className="absolute left-1/2 -translate-x-1/2"
-        style={{
-          width: 126,
-          height: 37,
-          borderRadius: 20,
-          backgroundColor: darkMode ? "#000000" : "#000000",
-          top: 11,
-        }}
-      />
-
-      <div className="flex items-center" style={{ gap: 6 }}>
-        <svg width="18" height="12" viewBox="0 0 18 12" fill={c}>
-          <rect x="0" y="8" width="3" height="4" rx="0.5" />
-          <rect x="4" y="5" width="3" height="7" rx="0.5" />
-          <rect x="8" y="2" width="3" height="10" rx="0.5" />
-          <rect x="12" y="0" width="3" height="12" rx="0.5" opacity="0.3" />
-        </svg>
-        <svg width="16" height="12" viewBox="0 0 16 12" fill={c}>
-          <path d="M8 9.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
-          <path
-            d="M8 6.5c1.5 0 2.9.6 3.9 1.6l1.1-1.1C11.5 5.4 9.8 4.7 8 4.7s-3.5.7-4.9 2.3l1.1 1.1c1-1 2.4-1.6 3.8-1.6z"
-            opacity="0.85"
-          />
-          <path
-            d="M8 3.5c2.5 0 4.8 1 6.5 2.7l1.1-1.1C13.5 2.4 10.9 1.3 8 1.3S2.5 2.4 1.4 4.1l1.1 1.1C4.2 4.5 6.1 3.5 8 3.5z"
-            opacity="0.55"
-          />
-        </svg>
-        <svg width="27" height="13" viewBox="0 0 27 13" fill="none">
-          <rect
-            x="0.5"
-            y="0.5"
-            width="22"
-            height="12"
-            rx="2.8"
-            stroke={c}
-            strokeWidth="1"
-          />
-          <rect x="2" y="2" width="19" height="9" rx="1.5" fill={c} />
-          <path
-            d="M24 4.5v4a1.5 1.5 0 000-4z"
-            fill={c}
-            opacity="0.35"
-          />
-        </svg>
+        className="flex items-center"
+        style={{ transform: "translateY(-1.5px)" }}
+      >
+        <StatusBarIcon
+          name="cellularbars"
+          size={STATUS_ICON_SIZE}
+          color={c}
+          weight={600}
+        />
+        <div
+          style={{ width: STATUS_ICON_GAP_CELLULAR_WIFI, flexShrink: 0 }}
+          aria-hidden
+        />
+        <StatusBarIcon
+          name="wifi"
+          size={STATUS_ICON_SIZE}
+          color={c}
+          weight={600}
+        />
+        <div
+          style={{ width: STATUS_ICON_GAP_WIFI_BATTERY, flexShrink: 0 }}
+          aria-hidden
+        />
+        <StatusBarBattery level={batteryLevel} darkMode={darkMode} />
       </div>
     </div>
   );

@@ -8,9 +8,8 @@ import { MessageBubble } from "./MessageBubble";
 import { TypingIndicator } from "./TypingIndicator";
 import { Timestamp } from "./Timestamp";
 import { ReadReceipt } from "./ReadReceipt";
-import { MessageInputBar } from "./MessageInputBar";
-import { IOSKeyboard, KEYBOARD_PANEL_HEIGHT } from "./IOSKeyboard";
-import { IMESSAGE } from "./theme";
+import { ComposeInputBar, IOSKeyboard, KEYBOARD_PANEL_HEIGHT } from "./IOSKeyboard";
+import { IMESSAGE, IMESSAGE_FONT } from "./theme";
 
 interface IMessagePreviewProps {
   settings: ConversationSettings;
@@ -45,31 +44,29 @@ export function IMessagePreview({
 
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [
-    messages,
-    visibleIds,
-    animation.isTyping,
-    showReceipt,
-    keyboardActive,
-    animation.draftText,
-  ]);
+    if (el) el.scrollTop = 0;
+  }, [messages, visibleIds, animation.isTyping, showReceipt]);
 
   return (
     <div
       className="relative overflow-hidden flex flex-col shrink-0"
       style={{
-        width: 390,
+        width: 402,
         height: 844,
         backgroundColor: bg,
-        fontFamily:
-          '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif',
+        fontFamily: IMESSAGE_FONT,
+        fontWeight: 500,
         WebkitFontSmoothing: "antialiased",
       }}
       data-export-target="true"
     >
       {settings.showStatusBar && (
-        <StatusBar time={settings.statusBarTime} darkMode={dark} />
+        <StatusBar
+          time={settings.statusBarTime}
+          darkMode={dark}
+          useLiveTime={settings.statusBarLiveTime}
+          batteryLevel={settings.statusBarBatteryLevel}
+        />
       )}
 
       <div className="flex-1 relative overflow-hidden min-h-0">
@@ -82,10 +79,9 @@ export function IMessagePreview({
         >
           <div
             style={{
-              minHeight: "100%",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "flex-end",
+              justifyContent: "flex-start",
               paddingTop: IMESSAGE.headerHeight,
               paddingBottom: 4,
               paddingLeft: IMESSAGE.screenPaddingX,
@@ -163,7 +159,7 @@ export function IMessagePreview({
         />
       </div>
 
-      {!keyboardActive && <MessageInputBar darkMode={dark} />}
+      {!keyboardActive && <ComposeInputBar />}
 
       {keyboardActive && (
         <IOSKeyboard

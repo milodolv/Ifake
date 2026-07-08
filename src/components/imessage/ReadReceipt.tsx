@@ -1,6 +1,6 @@
 "use client";
 
-import { IMESSAGE } from "./theme";
+import { IMESSAGE, IMESSAGE_FONT } from "./theme";
 
 interface ReadReceiptProps {
   type: "delivered" | "read";
@@ -30,7 +30,9 @@ export function ReadReceipt({
     >
       <span
         style={{
+          fontFamily: IMESSAGE_FONT,
           fontSize: 11,
+          fontWeight: 500,
           color: IMESSAGE.textSecondary,
           letterSpacing: "-0.01em",
         }}

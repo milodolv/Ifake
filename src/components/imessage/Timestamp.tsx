@@ -1,6 +1,6 @@
 "use client";
 
-import { IMESSAGE } from "./theme";
+import { IMESSAGE, IMESSAGE_FONT } from "./theme";
 
 interface TimestampProps {
   text: string;
@@ -15,6 +15,7 @@ export function Timestamp({ text }: TimestampProps) {
     >
       <span
         style={{
+          fontFamily: IMESSAGE_FONT,
           fontSize: 11,
           fontWeight: 500,
           color: IMESSAGE.textSecondary,

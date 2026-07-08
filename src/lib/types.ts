@@ -24,6 +24,9 @@ export interface ConversationSettings {
   imessageDarkMode: boolean;
   showStatusBar: boolean;
   statusBarTime: string;
+  statusBarLiveTime: boolean;
+  statusBarBatteryLevel: number;
+  statusBarBatteryAuto: boolean;
   showReadReceipt: boolean;
   readReceiptType: "delivered" | "read";
   readReceiptTime: string;
@@ -65,6 +68,9 @@ export const DEFAULT_SETTINGS: ConversationSettings = {
   imessageDarkMode: true,
   showStatusBar: true,
   statusBarTime: "9:41",
+  statusBarLiveTime: true,
+  statusBarBatteryLevel: 92,
+  statusBarBatteryAuto: true,
   showReadReceipt: false,
   readReceiptType: "read",
   readReceiptTime: "14:32",
@@ -75,7 +81,15 @@ export const DEFAULT_SETTINGS: ConversationSettings = {
 export function normalizeSettings(
   settings: Partial<ConversationSettings>
 ): ConversationSettings {
-  return { ...DEFAULT_SETTINGS, ...settings };
+  return {
+    ...DEFAULT_SETTINGS,
+    ...settings,
+    statusBarLiveTime: settings.statusBarLiveTime ?? DEFAULT_SETTINGS.statusBarLiveTime,
+    statusBarBatteryLevel:
+      settings.statusBarBatteryLevel ?? DEFAULT_SETTINGS.statusBarBatteryLevel,
+    statusBarBatteryAuto:
+      settings.statusBarBatteryAuto ?? DEFAULT_SETTINGS.statusBarBatteryAuto,
+  };
 }
 
 export const createDefaultMessage = (sender: Sender = "contact"): Message => ({

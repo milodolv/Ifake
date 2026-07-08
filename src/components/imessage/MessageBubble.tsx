@@ -1,7 +1,7 @@
 "use client";
 
 import { Message } from "@/lib/types";
-import { IMESSAGE } from "./theme";
+import { IMESSAGE, IMESSAGE_FONT } from "./theme";
 
 interface MessageBubbleProps {
   message: Message;
@@ -12,36 +12,31 @@ interface MessageBubbleProps {
   isFirstInConversation?: boolean;
 }
 
-function BubbleTail({
-  color,
-  side,
-}: {
-  color: string;
-  side: "left" | "right";
-}) {
-  if (side === "right") {
-    return (
-      <span
-        aria-hidden
-        className="absolute pointer-events-none"
-        style={{
-          right: -5,
-          bottom: 0,
-          width: 16,
-          height: 16,
-          background: "transparent",
-          borderBottomLeftRadius: 14,
-          boxShadow: `-3px 0 0 0 ${color}`,
-        }}
-      />
-    );
-  }
-
+function BubbleTailRight({ color }: { color: string }) {
   return (
     <span
       aria-hidden
       className="absolute pointer-events-none"
       style={{
+        zIndex: 0,
+        right: -9,
+        bottom: 0,
+        width: 20,
+        height: 24,
+        backgroundColor: color,
+        borderBottomLeftRadius: 24,
+      }}
+    />
+  );
+}
+
+function BubbleTailLeft({ color }: { color: string }) {
+  return (
+    <span
+      aria-hidden
+      className="absolute pointer-events-none"
+      style={{
+        zIndex: 0,
         left: -5,
         bottom: 0,
         width: 16,
@@ -99,6 +94,9 @@ export function MessageBubble({
       ? 0
       : IMESSAGE.spacingDiffSender;
 
+  const showRightTail = isLastInGroup && isMe;
+  const showLeftTail = isLastInGroup && !isMe;
+
   return (
     <div
       className={`flex w-full ${isMe ? "justify-end" : "justify-start"}`}
@@ -108,30 +106,40 @@ export function MessageBubble({
         className="relative break-words"
         style={{
           maxWidth: IMESSAGE.bubbleMaxWidth,
-          padding: `${IMESSAGE.bubblePaddingY}px ${IMESSAGE.bubblePaddingX}px`,
-          fontSize: IMESSAGE.bubbleFontSize,
-          lineHeight: `${IMESSAGE.bubbleLineHeight}px`,
-          backgroundColor: bubbleBg,
-          color: textColor,
-          letterSpacing: "-0.01em",
-          ...radius,
+          marginRight: showRightTail ? 8 : 0,
+          marginLeft: showLeftTail ? 6 : 0,
         }}
       >
-        {message.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={message.imageUrl}
-            alt=""
-            className="rounded-2xl max-w-full"
-            style={{ maxHeight: 200 }}
-          />
-        ) : (
-          message.content
-        )}
+        {showRightTail && <BubbleTailRight color={bubbleBg} />}
+        {showLeftTail && <BubbleTailLeft color={bubbleBg} />}
 
-        {isLastInGroup && (
-          <BubbleTail color={bubbleBg} side={isMe ? "right" : "left"} />
-        )}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            padding: `${IMESSAGE.bubblePaddingY}px ${IMESSAGE.bubblePaddingX}px`,
+            fontSize: IMESSAGE.bubbleFontSize,
+            fontWeight: IMESSAGE.bubbleFontWeight,
+            fontFamily: IMESSAGE_FONT,
+            lineHeight: `${IMESSAGE.bubbleLineHeight}px`,
+            backgroundColor: bubbleBg,
+            color: textColor,
+            letterSpacing: "-0.01em",
+            ...radius,
+          }}
+        >
+          {message.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={message.imageUrl}
+              alt=""
+              className="rounded-2xl max-w-full"
+              style={{ maxHeight: 200, position: "relative", zIndex: 2 }}
+            />
+          ) : (
+            <span style={{ position: "relative", zIndex: 2 }}>{message.content}</span>
+          )}
+        </div>
       </div>
     </div>
   );

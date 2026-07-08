@@ -10,6 +10,10 @@ import {
   normalizeSettings,
 } from "./types";
 import { DEFAULT_ANIMATION_STATE } from "./animationDefaults";
+import {
+  advanceBatteryForNewConversation,
+} from "./batterySimulation";
+import { formatTime24 } from "./formatTime24";
 
 interface EditorStore {
   settings: ConversationSettings;
@@ -24,22 +28,32 @@ interface EditorStore {
   setAnimation: (partial: Partial<AnimationState>) => void;
   resetAnimation: () => void;
   loadConversation: (settings: ConversationSettings, messages: Message[]) => void;
+  newConversation: () => void;
 }
 
 const initialAnimation: AnimationState = { ...DEFAULT_ANIMATION_STATE };
 
+const DEFAULT_MESSAGE_IDS = {
+  contact: "seed-message-contact",
+  me: "seed-message-me",
+} as const;
+
+const defaultMessages = (): Message[] => [
+  {
+    ...createDefaultMessage("contact"),
+    id: DEFAULT_MESSAGE_IDS.contact,
+    content: "Salut ! Comment ça va ?",
+  },
+  {
+    ...createDefaultMessage("me"),
+    id: DEFAULT_MESSAGE_IDS.me,
+    content: "Très bien merci, et toi ?",
+  },
+];
+
 export const useEditorStore = create<EditorStore>((set, get) => ({
   settings: { ...DEFAULT_SETTINGS },
-  messages: [
-    {
-      ...createDefaultMessage("contact"),
-      content: "Salut ! Comment ça va ?",
-    },
-    {
-      ...createDefaultMessage("me"),
-      content: "Très bien merci, et toi ?",
-    },
-  ],
+  messages: defaultMessages(),
   animation: { ...initialAnimation },
 
   setSettings: (partial) =>
@@ -108,6 +122,26 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
         visibleMessageIds: messages.map((m) => m.id),
       },
     }),
+
+  newConversation: () => {
+    const prev = get().settings;
+    const timeHint = prev.statusBarLiveTime
+      ? formatTime24()
+      : prev.statusBarTime;
+    const level = prev.statusBarBatteryAuto
+      ? advanceBatteryForNewConversation(timeHint)
+      : prev.statusBarBatteryLevel;
+
+    set({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        statusBarBatteryLevel: level,
+        statusBarBatteryAuto: prev.statusBarBatteryAuto,
+      },
+      messages: defaultMessages(),
+      animation: { ...initialAnimation },
+    });
+  },
 }));
 
 // Preview mode: show all messages by default when not animating

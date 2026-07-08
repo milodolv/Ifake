@@ -2,6 +2,7 @@
 
 import { getKeyboardSuggestions } from "@/lib/keyboardSuggestions";
 import { KeyboardIcon, EmojiFaceIcon, Numeric123Label, KEYBOARD_FONT } from "./KeyboardIcon";
+import { IMESSAGE, IMESSAGE_FONT_WEIGHT } from "./theme";
 
 interface IOSKeyboardProps {
   pressedKey: string | null;
@@ -27,8 +28,13 @@ const ICON_SYSTEM_SIZE = 26;
 const ICON_SYSTEM_WEIGHT = 460;
 const ICON_SYSTEM_STROKE = 0.08;
 const EMOJI_FACE_SIZE = 25;
-const SEND_BLUE = "#0B84FF";
+const SEND_BLUE = IMESSAGE.blue;
 const KEY_GAP_H = 6;
+const ROW3_SHIFT_FLEX = 1.42;
+const ROW3_DELETE_FLEX = 1.42;
+const ROW3_LETTER_FLEX = 0.9;
+const ROW3_APOSTROPHE_FLEX = 1;
+const ROW3_SIDE_GAP = 5;
 const KEY_GAP_V = 10;
 const KEY_GAP_V_LAST = 12;
 const KEYBOARD_BOTTOM_PADDING = 20;
@@ -80,7 +86,7 @@ function KeyCallout({ label }: { label: string }) {
         />
       </svg>
       <span
-        className="absolute font-normal text-white"
+        className="absolute text-white"
         style={{
           top: 6,
           left: 0,
@@ -89,6 +95,7 @@ function KeyCallout({ label }: { label: string }) {
           fontSize: 28,
           lineHeight: 1,
           fontFamily: KEYBOARD_FONT,
+          fontWeight: IMESSAGE_FONT_WEIGHT.semibold,
         }}
       >
         {label}
@@ -103,12 +110,16 @@ function Key({
   flex = 1,
   children,
   fontSize,
+  marginRight,
+  marginLeft,
 }: {
   label?: string;
   pressedKey: string | null;
   flex?: number;
   children?: React.ReactNode;
   fontSize?: number;
+  marginRight?: number;
+  marginLeft?: number;
 }) {
   const matchLabel = label?.toUpperCase() ?? null;
   const isPressed = matchLabel != null && pressedKey === matchLabel;
@@ -116,7 +127,13 @@ function Key({
   return (
     <div
       className="relative flex items-end justify-center"
-      style={{ flex, minWidth: 0, height: KEY_HEIGHT }}
+      style={{
+        flex,
+        minWidth: 0,
+        height: KEY_HEIGHT,
+        marginRight,
+        marginLeft,
+      }}
     >
       {isPressed && label && <KeyCallout label={label} />}
       <div
@@ -126,7 +143,7 @@ function Key({
           backgroundColor: isPressed ? KEY_PRESSED_BG : KEY_BG,
           borderRadius: KEY_RADIUS,
           fontSize: fontSize ?? (label && label.length === 1 ? 23 : 16),
-          fontWeight: 400,
+          fontWeight: IMESSAGE_FONT_WEIGHT.semibold,
           fontFamily: KEYBOARD_FONT,
           color: "#FFFFFF",
           zIndex: isPressed ? 10 : 1,
@@ -166,17 +183,22 @@ const INPUT_FIELD_V_PADDING = (INPUT_ROW_HEIGHT - SEND_BUTTON_HEIGHT) / 2;
 function InputBar({
   draftText,
   showSend,
+  showMicButton = false,
+  horizontalPadding = 8,
 }: {
   draftText: string;
   showSend: boolean;
+  showMicButton?: boolean;
+  horizontalPadding?: number;
 }) {
   const hasDraft = draftText.length > 0;
+  const trailingAction = showSend || showMicButton;
 
   return (
     <div
       className="flex items-center gap-2 shrink-0"
       style={{
-        padding: "8px 8px 6px",
+        padding: `8px ${horizontalPadding}px 6px`,
         backgroundColor: BASE_BG,
       }}
     >
@@ -203,9 +225,12 @@ function InputBar({
           height: INPUT_ROW_HEIGHT,
           backgroundColor: INPUT_FIELD_BG,
           color: hasDraft ? "#FFFFFF" : "#8E8E93",
+          fontFamily: KEYBOARD_FONT,
           fontSize: 17,
+          fontWeight: IMESSAGE_FONT_WEIGHT.body,
+          letterSpacing: "-0.01em",
           paddingLeft: 16,
-          paddingRight: showSend ? 5 : 16,
+          paddingRight: trailingAction ? 5 : 16,
           paddingTop: INPUT_FIELD_V_PADDING,
           paddingBottom: INPUT_FIELD_V_PADDING,
         }}
@@ -217,7 +242,7 @@ function InputBar({
               <span
                 className="inline-block w-[2px] h-[20px] ml-[1px] shrink-0"
                 style={{
-                  backgroundColor: "#0A84FF",
+                  backgroundColor: IMESSAGE.blue,
                   animation: "ifake-cursor 1s step-end infinite",
                 }}
               />
@@ -225,7 +250,7 @@ function InputBar({
           ) : (
             "iMessage"
           )}
-          {!showSend && (
+          {!trailingAction && (
             <svg
               className="absolute right-0 top-1/2 -translate-y-1/2"
               width="14"
@@ -243,6 +268,25 @@ function InputBar({
             </svg>
           )}
         </div>
+
+        {showMicButton && (
+          <div
+            className="flex items-center justify-center shrink-0"
+            style={{
+              width: SEND_BUTTON_WIDTH,
+              height: SEND_BUTTON_HEIGHT,
+              marginLeft: 6,
+            }}
+          >
+            <KeyboardIcon
+              name="mic"
+              size={22}
+              color="#8E8E93"
+              weight={ICON_SYSTEM_WEIGHT}
+              strokeWidth={ICON_SYSTEM_STROKE}
+            />
+          </div>
+        )}
 
         {showSend && (
           <div
@@ -265,6 +309,22 @@ function InputBar({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+export function ComposeInputBar() {
+  return (
+    <div
+      className="shrink-0"
+      style={{ backgroundColor: BASE_BG, paddingBottom: 22 }}
+    >
+      <InputBar
+        draftText=""
+        showSend={false}
+        showMicButton
+        horizontalPadding={16}
+      />
     </div>
   );
 }
@@ -359,8 +419,9 @@ function SuggestionBar({
           className="truncate px-2"
           style={{
             color: "#FFFFFF",
+            fontFamily: KEYBOARD_FONT,
             fontSize: 17,
-            fontWeight: 400,
+            fontWeight: IMESSAGE_FONT_WEIGHT.body,
             letterSpacing: "-0.02em",
           }}
         >
@@ -373,8 +434,9 @@ function SuggestionBar({
           className="truncate px-2"
           style={{
             color: "#FFFFFF",
+            fontFamily: KEYBOARD_FONT,
             fontSize: 17,
-            fontWeight: 400,
+            fontWeight: IMESSAGE_FONT_WEIGHT.body,
             letterSpacing: "-0.02em",
           }}
         >
@@ -387,7 +449,9 @@ function SuggestionBar({
           className="truncate px-2"
           style={{
             color: "#FFFFFF",
+            fontFamily: KEYBOARD_FONT,
             fontSize: 16,
+            fontWeight: IMESSAGE_FONT_WEIGHT.body,
             letterSpacing: 1,
           }}
         >
@@ -452,7 +516,7 @@ export function IOSKeyboard({
             ))}
           </KeyRow>
           <KeyRow>
-            <Key pressedKey={pressedKey} flex={1.35}>
+            <Key pressedKey={pressedKey} flex={ROW3_SHIFT_FLEX} marginRight={ROW3_SIDE_GAP}>
               <KeyboardIcon
                 name="shift"
                 size={ICON_KEY_SIZE}
@@ -461,10 +525,21 @@ export function IOSKeyboard({
               />
             </Key>
             {ROW3.map((key) => (
-              <Key key={key} label={key} pressedKey={pressedKey} />
+              <Key
+                key={key}
+                label={key}
+                pressedKey={pressedKey}
+                flex={ROW3_LETTER_FLEX}
+              />
             ))}
-            <Key label="'" pressedKey={pressedKey} fontSize={22} />
-            <Key pressedKey={pressedKey} flex={1.35}>
+            <Key
+              label="'"
+              pressedKey={pressedKey}
+              fontSize={22}
+              flex={ROW3_APOSTROPHE_FLEX}
+              marginRight={ROW3_SIDE_GAP}
+            />
+            <Key pressedKey={pressedKey} flex={ROW3_DELETE_FLEX}>
               <KeyboardIcon
                 name="delete-left"
                 size={ICON_KEY_SIZE}
