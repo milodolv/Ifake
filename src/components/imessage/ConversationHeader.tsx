@@ -9,29 +9,36 @@ interface ConversationHeaderProps {
   name: string;
   photoUrl?: string;
   darkMode: boolean;
+  top: number;
 }
 
 const AVATAR_SIZE = 62;
 const HEADER_BUTTON_SIZE = 50;
+const HEADER_CAMERA_BUTTON_SIZE = 54;
+const HEADER_CAMERA_ICON_SIZE = 27;
+const HEADER_BUBBLE_LIFT = 15;
 const HEADER_ROW_TOP = 14;
-const NAME_PILL_OVERLAP = 6;
+const NAME_PILL_OVERLAP = 7;
 
 function HeaderIconButton({
   children,
+  size = HEADER_BUTTON_SIZE,
+  style,
 }: {
   children: React.ReactNode;
+  size?: number;
+  style?: React.CSSProperties;
 }) {
   return (
     <div
       className="flex items-center justify-center shrink-0"
       style={{
-        width: HEADER_BUTTON_SIZE,
-        height: HEADER_BUTTON_SIZE,
+        width: size,
+        height: size,
         borderRadius: "50%",
         backgroundColor: "rgba(58, 58, 62, 0.58)",
-        backdropFilter: "saturate(180%) blur(20px)",
-        WebkitBackdropFilter: "saturate(180%) blur(20px)",
         color: "#FFFFFF",
+        ...style,
       }}
       aria-hidden
     >
@@ -44,33 +51,33 @@ export function ConversationHeader({
   name,
   photoUrl,
   darkMode,
+  top,
 }: ConversationHeaderProps) {
   return (
     <div
-      className="absolute top-0 left-0 right-0 z-10"
+      className="absolute left-0 right-0 z-[15] pointer-events-none"
       style={{
-        backgroundColor: darkMode
-          ? IMESSAGE.headerBlurDark
-          : IMESSAGE.headerBlurLight,
-        backdropFilter: "saturate(180%) blur(20px)",
-        WebkitBackdropFilter: "saturate(180%) blur(20px)",
+        top,
       }}
     >
       <div
-        className="flex items-start justify-between"
+        className="flex items-start justify-between pointer-events-auto"
         style={{
           height: IMESSAGE.headerHeight,
-          paddingLeft: 8,
-          paddingRight: 12,
+          paddingLeft: IMESSAGE.headerPaddingLeft,
+          paddingRight: IMESSAGE.headerPaddingRight,
           paddingTop: HEADER_ROW_TOP,
           paddingBottom: 4,
         }}
       >
-        <HeaderIconButton>
-          <HeaderIcon name="chevron-left" size={23} weight={680} strokeWidth={0.58} />
+        <HeaderIconButton style={{ marginTop: -HEADER_BUBBLE_LIFT }}>
+          <HeaderIcon name="chevron-left" size={25} weight={680} strokeWidth={0.58} />
         </HeaderIconButton>
 
-        <div className="flex flex-col items-center flex-1 min-w-0">
+        <div
+          className="flex flex-col items-center flex-1 min-w-0"
+          style={{ marginTop: -HEADER_BUBBLE_LIFT }}
+        >
           {photoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -117,6 +124,8 @@ export function ConversationHeader({
             }}
           >
             <span
+              data-export-contact-name
+              className="ifake-export-text"
               style={{
                 fontFamily: KEYBOARD_FONT,
                 fontSize: 17,
@@ -139,8 +148,16 @@ export function ConversationHeader({
           </div>
         </div>
 
-        <HeaderIconButton>
-          <HeaderIcon name="video" size={22} weight={500} strokeWidth={0.28} />
+        <HeaderIconButton
+          size={HEADER_CAMERA_BUTTON_SIZE}
+          style={{ marginTop: -HEADER_BUBBLE_LIFT }}
+        >
+          <HeaderIcon
+            name="video"
+            size={HEADER_CAMERA_ICON_SIZE}
+            weight={500}
+            strokeWidth={0.28}
+          />
         </HeaderIconButton>
       </div>
     </div>

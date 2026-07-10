@@ -10,11 +10,18 @@ import {
 import {
   exportConversationVideo,
   shareOrDownloadVideo,
+  EXPORT_PREVIEW_WIDTH,
+  EXPORT_PREVIEW_HEIGHT,
 } from "@/lib/videoExport";
 import { AnimationState } from "@/lib/types";
 import { DEFAULT_ANIMATION_STATE } from "@/lib/animationDefaults";
 import { IMessagePreview } from "@/components/imessage/IMessagePreview";
+import { IMESSAGE } from "@/components/imessage/theme";
 import { AnimationPlaybackControls } from "./AnimationPlaybackControls";
+import { ExportSpeedSelector } from "./ExportSpeedSelector";
+
+const PREVIEW_SCALE = 0.85;
+const CONTROLS_GAP_BELOW_SCREEN = 10;
 
 const emptyAnim: AnimationState = { ...DEFAULT_ANIMATION_STATE };
 
@@ -41,7 +48,7 @@ export function PreviewPanel() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState("");
   const [exportedBlob, setExportedBlob] = useState<Blob | null>(null);
-  const [exportedExt, setExportedExt] = useState("webm");
+  const [exportedExt, setExportedExt] = useState("mp4");
 
   const [showControls, setShowControls] = useState(false);
   const [currentMs, setCurrentMs] = useState(0);
@@ -131,6 +138,7 @@ export function PreviewPanel() {
     setCurrentMs(0);
     setDurationMs(0);
     keyframesRef.current = [];
+    setDisplayAnimation(emptyAnim);
   }, [messages, settings, stopLoop]);
 
   const handlePreview = useCallback(() => {
@@ -168,20 +176,41 @@ export function PreviewPanel() {
     startPlayback(currentTimeRef.current);
   }, [startPlayback, tick]);
 
-  const handleSkipForward = useCallback(() => {
-    if (durationMsRef.current === 0) return;
-    const next = Math.min(
-      currentTimeRef.current + 10000,
-      durationMsRef.current
-    );
-    applyTime(next);
-    if (next >= durationMsRef.current) {
-      playingRef.current = false;
-      setIsPlaying(false);
-      setIsPaused(false);
-      stopLoop();
-    }
-  }, [applyTime, stopLoop]);
+  const handleSeekTo = useCallback(
+    (timeMs: number) => {
+      if (durationMsRef.current === 0) return;
+      const next = Math.max(
+        0,
+        Math.min(timeMs, durationMsRef.current)
+      );
+      applyTime(next);
+      if (next >= durationMsRef.current) {
+        playingRef.current = false;
+        setIsPlaying(false);
+        setIsPaused(false);
+        stopLoop();
+      }
+    },
+    [applyTime, stopLoop]
+  );
+
+  const handleSeek = useCallback(
+    (deltaMs: number) => {
+      if (durationMsRef.current === 0) return;
+      const next = Math.max(
+        0,
+        Math.min(currentTimeRef.current + deltaMs, durationMsRef.current)
+      );
+      applyTime(next);
+      if (next >= durationMsRef.current) {
+        playingRef.current = false;
+        setIsPlaying(false);
+        setIsPaused(false);
+        stopLoop();
+      }
+    },
+    [applyTime, stopLoop]
+  );
 
   const handleSpeedChange = useCallback((rate: number) => {
     playbackRateRef.current = rate;
@@ -204,10 +233,13 @@ export function PreviewPanel() {
         el,
         messages,
         settings,
-        setExportStatus,
-        (partial) => {
-          setExportAnimation((prev) => ({ ...prev, ...partial }));
-          return new Promise((r) => requestAnimationFrame(() => r()));
+        {
+          playbackRate: playbackRateRef.current,
+          onProgress: setExportStatus,
+          onFrameUpdate: (partial) => {
+            setExportAnimation((prev) => ({ ...prev, ...partial }));
+            return new Promise((r) => requestAnimationFrame(() => r()));
+          },
         }
       );
 
@@ -234,84 +266,121 @@ export function PreviewPanel() {
   };
 
   const anim =
-    isPlaying || isPaused || displayAnimation.isComplete
-      ? displayAnimation
-      : previewAnimation;
+    isPlaying || isPaused ? displayAnimation : previewAnimation;
 
   const previewBusy = isPlaying && !isPaused;
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center">
       <div
-        className="rounded-[2rem] overflow-hidden shadow-2xl ring-1 ring-white/10"
-        style={{ transform: "scale(0.85)", transformOrigin: "top center" }}
+        className="relative shrink-0"
+        style={{
+          width: IMESSAGE.screenWidth * PREVIEW_SCALE,
+          height: IMESSAGE.screenHeight * PREVIEW_SCALE,
+        }}
       >
-        <IMessagePreview
-          settings={settings}
-          messages={messages}
-          animation={anim}
-        />
+        <div
+          className="absolute top-0 left-1/2 rounded-[2rem] overflow-hidden shadow-2xl ring-1 ring-white/10"
+          style={{
+            width: IMESSAGE.screenWidth,
+            height: IMESSAGE.screenHeight,
+            transform: `translateX(-50%) scale(${PREVIEW_SCALE})`,
+            transformOrigin: "top center",
+          }}
+        >
+          <IMessagePreview
+            settings={settings}
+            messages={messages}
+            animation={anim}
+            playbackRate={isPlaying || isPaused ? playbackRate : 1}
+            playbackPaused={isPaused}
+            bubbleEntranceEnabled={isPlaying || isPaused}
+          />
+        </div>
       </div>
 
       <div
-        className="fixed pointer-events-none opacity-0"
-        style={{ left: 0, top: 0, zIndex: -1 }}
         aria-hidden
+        className="ifake-export-capture"
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: EXPORT_PREVIEW_WIDTH,
+          height: EXPORT_PREVIEW_HEIGHT,
+          opacity: 0,
+          pointerEvents: "none",
+          zIndex: -1,
+          overflow: "hidden",
+        }}
       >
         <div ref={exportPreviewRef}>
           <IMessagePreview
             settings={settings}
             messages={messages}
             animation={exportAnimation}
+            playbackRate={playbackRateRef.current}
+            bubbleEntranceEnabled={false}
+            exportCaptureMode
           />
         </div>
       </div>
 
-      <AnimationPlaybackControls
-        currentMs={currentMs}
-        durationMs={durationMs}
-        isPlaying={isPlaying}
-        isPaused={isPaused}
-        playbackRate={playbackRate}
-        visible={showControls}
-        onTogglePlayPause={handleTogglePlayPause}
-        onSkipForward={handleSkipForward}
-        onSpeedChange={handleSpeedChange}
-      />
+      <div
+        className="w-full max-w-lg flex flex-col items-center gap-2.5"
+        style={{ marginTop: CONTROLS_GAP_BELOW_SCREEN }}
+      >
+        <ExportSpeedSelector
+          playbackRate={playbackRate}
+          onSpeedChange={handleSpeedChange}
+          disabled={isExporting || previewBusy}
+        />
 
-      <div className="flex flex-wrap gap-2 justify-center">
-        <button
-          type="button"
-          onClick={handlePreview}
-          disabled={isExporting || previewBusy}
-          className="px-5 py-2.5 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/15 disabled:opacity-50"
-        >
-          Prévisualiser l&apos;animation
-        </button>
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={isExporting || previewBusy}
-          className="px-5 py-2.5 rounded-lg bg-accent text-white text-sm font-medium shadow-glow hover:bg-accent/90 disabled:opacity-50"
-        >
-          {isExporting ? "Export en cours…" : "Exporter en vidéo"}
-        </button>
-        {exportedBlob && (
+        <AnimationPlaybackControls
+          currentMs={currentMs}
+          durationMs={durationMs}
+          isPlaying={isPlaying}
+          isPaused={isPaused}
+          visible={showControls}
+          onTogglePlayPause={handleTogglePlayPause}
+          onSeek={handleSeek}
+          onSeekTo={handleSeekTo}
+        />
+
+        <div className="flex flex-wrap gap-2 justify-center">
           <button
             type="button"
-            onClick={handleShare}
-            className="px-5 py-2.5 rounded-lg bg-green-600 text-white text-sm font-medium"
+            onClick={handlePreview}
+            disabled={isExporting || previewBusy}
+            className="px-5 py-2.5 rounded-lg bg-white/10 text-white text-sm font-medium hover:bg-white/15 disabled:opacity-50"
           >
-            Partager / Télécharger
+            Prévisualiser l&apos;animation
           </button>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={isExporting || previewBusy}
+            className="px-5 py-2.5 rounded-lg bg-accent text-white text-sm font-medium shadow-glow hover:bg-accent/90 disabled:opacity-50"
+          >
+            {isExporting ? "Export en cours…" : "Exporter en vidéo"}
+          </button>
+          {exportedBlob && (
+            <button
+              type="button"
+              onClick={handleShare}
+              className="px-5 py-2.5 rounded-lg bg-green-600 text-white text-sm font-medium"
+            >
+              Partager / Télécharger
+            </button>
+          )}
+        </div>
+
+        {exportStatus && (
+          <p className="text-xs text-white/50 text-center max-w-xs">
+            {exportStatus}
+          </p>
         )}
       </div>
-
-      {exportStatus && (
-        <p className="text-xs text-white/50 text-center max-w-xs">
-          {exportStatus}
-        </p>
-      )}
     </div>
   );
 }

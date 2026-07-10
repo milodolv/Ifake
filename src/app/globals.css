@@ -30,3 +30,150 @@ body {
     opacity: 0;
   }
 }
+
+@keyframes ifake-bubble-enter {
+  0% {
+    opacity: 0.6;
+    transform: translateY(12px) scale(0.82);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ifake-bubble-enter-wrap {
+    animation: none !important;
+  }
+}
+
+/* Déplacement doux de la luminosité — transitions intermédiaires entre chaque point. */
+@keyframes ifake-typing-dot-0 {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  16.67% {
+    opacity: 0.54;
+  }
+  33.33% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  66.67% {
+    opacity: 0.3;
+  }
+  83.33% {
+    opacity: 0.54;
+  }
+}
+
+@keyframes ifake-typing-dot-1 {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  16.67% {
+    opacity: 0.58;
+  }
+  33.33% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 0.58;
+  }
+  66.67% {
+    opacity: 0.4;
+  }
+  83.33% {
+    opacity: 0.34;
+  }
+}
+
+@keyframes ifake-typing-dot-2 {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  16.67% {
+    opacity: 0.34;
+  }
+  33.33% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.58;
+  }
+  66.67% {
+    opacity: 0.72;
+  }
+  83.33% {
+    opacity: 0.58;
+  }
+}
+
+.ifake-typing-dot {
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.ifake-typing-dot-0 {
+  animation-name: ifake-typing-dot-0;
+}
+
+.ifake-typing-dot-1 {
+  animation-name: ifake-typing-dot-1;
+}
+
+.ifake-typing-dot-2 {
+  animation-name: ifake-typing-dot-2;
+}
+
+/* Export vidéo — layout stable pendant la capture html2canvas */
+.ifake-export-capture {
+  --ifake-export-text-nudge: -3px;
+}
+
+.ifake-export-capture,
+.ifake-export-capture * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* html2canvas décale le texte vers le bas dans les conteneurs flex */
+.ifake-export-capture [data-export-flex-center] {
+  align-items: center !important;
+}
+
+.ifake-export-capture [data-export-key-wrapper] {
+  align-items: center !important;
+}
+
+.ifake-export-capture [data-export-key-cap] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ifake-export-capture [data-export-key-callout-label] {
+  transform: translateY(0) !important;
+}
+
+.ifake-export-capture [data-export-input-inner] {
+  transform: none !important;
+}
+
+.ifake-export-capture .ifake-export-text {
+  position: relative;
+  top: var(--ifake-export-text-nudge);
+  line-height: 1.1;
+}
+
+.ifake-export-capture [data-export-bubble-text] {
+  position: relative;
+  top: var(--ifake-export-text-nudge);
+  display: inline-block;
+}

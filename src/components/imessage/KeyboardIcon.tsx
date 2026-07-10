@@ -55,14 +55,15 @@ export function KeyboardIcon({
 
 export const KEYBOARD_FONT = IMESSAGE_FONT;
 
-export function Numeric123Label() {
+export function Numeric123Label({ fontSize = 21 }: { fontSize?: number }) {
   return (
     <span
       aria-hidden
       style={{
         fontFamily: KEYBOARD_FONT,
-        fontSize: 21,
-        fontWeight: 600,
+        fontSize,
+        fontWeight: 700,
+        fontVariationSettings: '"wght" 700',
         letterSpacing: "-0.05em",
         color: "#FFFFFF",
         lineHeight: 1,
@@ -72,6 +73,24 @@ export function Numeric123Label() {
     >
       123
     </span>
+  );
+}
+
+export function ShiftKeyIcon({
+  size = 21,
+  filled = false,
+}: {
+  size?: number;
+  filled?: boolean;
+}) {
+  return (
+    <KeyboardIcon
+      name={filled ? "shift-fill" : "shift"}
+      size={size}
+      color="#FFFFFF"
+      weight={470}
+      strokeWidth={0.1}
+    />
   );
 }
 
@@ -85,11 +104,11 @@ export function EmojiFaceIcon({ size = 25 }: { size?: number }) {
       aria-hidden
     >
       <circle cx="12" cy="12" r="10.2" fill="#FFFFFF" />
-      <circle cx="9" cy="10" r="1.45" fill="#6E6E73" />
-      <circle cx="15" cy="10" r="1.45" fill="#6E6E73" />
+      <circle cx="9" cy="10" r="1.45" fill="#636366" />
+      <circle cx="15" cy="10" r="1.45" fill="#636366" />
       <path
         d="M8.1 14.1C9.6 16.3 14.4 16.3 15.9 14.1"
-        stroke="#6E6E73"
+        stroke="#636366"
         strokeWidth="1.55"
         strokeLinecap="round"
         fill="none"

@@ -2,6 +2,7 @@
 
 import { useEditorStore } from "@/lib/store";
 import { ContactSettings } from "./ContactSettings";
+import { ConversationImport } from "./ConversationImport";
 import { MessageConfigItem } from "./MessageConfigItem";
 import { TemplateManager } from "./TemplateManager";
 
@@ -10,10 +11,37 @@ export function ConfigPanel() {
   const messages = useEditorStore((s) => s.messages);
   const setSettings = useEditorStore((s) => s.setSettings);
   const addMessage = useEditorStore((s) => s.addMessage);
+  const clearAll = useEditorStore((s) => s.clearAll);
+
+  const handleClearAll = () => {
+    if (
+      !confirm(
+        "Tout effacer ? La conversation, les messages et l'import seront supprimés."
+      )
+    ) {
+      return;
+    }
+    clearAll();
+  };
 
   return (
     <div className="space-y-6 pb-8">
+      <div className="flex items-center justify-between gap-3 pb-1 border-b border-white/10">
+        <span className="text-xs text-white/40 uppercase tracking-wide">
+          Brouillon
+        </span>
+        <button
+          type="button"
+          onClick={handleClearAll}
+          className="px-3 py-1.5 text-xs rounded-md bg-red-500/15 text-red-400 hover:bg-red-500/25 font-medium"
+        >
+          Clear all
+        </button>
+      </div>
+
       <ContactSettings />
+
+      <ConversationImport />
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">

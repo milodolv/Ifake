@@ -16,6 +16,39 @@ export const DEFAULT_ANIMATION_STATE: AnimationState = {
   keyboardTargetText: null,
 };
 
+/** Remet le brouillon / touches sans fermer le clavier. */
+export function resetDraftFields(): Pick<
+  AnimationState,
+  | "draftText"
+  | "pressedKey"
+  | "showSendButton"
+  | "keyboardTargetText"
+> {
+  return {
+    draftText: "",
+    pressedKey: null,
+    showSendButton: false,
+    keyboardTargetText: null,
+  };
+}
+
+/** État clavier en fin d'animation — clavier ouvert, champ vide, curseur actif. */
+export function endAnimationKeyboardFields(): Pick<
+  AnimationState,
+  | "showKeyboard"
+  | "keyboardOpen"
+  | "draftText"
+  | "pressedKey"
+  | "showSendButton"
+  | "keyboardTargetText"
+> {
+  return {
+    showKeyboard: true,
+    keyboardOpen: true,
+    ...resetDraftFields(),
+  };
+}
+
 export function resetAnimationFields(): Pick<
   AnimationState,
   | "showKeyboard"
@@ -28,9 +61,6 @@ export function resetAnimationFields(): Pick<
   return {
     showKeyboard: false,
     keyboardOpen: false,
-    draftText: "",
-    pressedKey: null,
-    showSendButton: false,
-    keyboardTargetText: null,
+    ...resetDraftFields(),
   };
 }

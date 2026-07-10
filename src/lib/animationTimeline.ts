@@ -3,12 +3,15 @@ import { getMessageDelay } from "./autoDelay";
 import { formatDate } from "./utils";
 import {
   DEFAULT_ANIMATION_STATE,
+  endAnimationKeyboardFields,
   resetAnimationFields,
+  resetDraftFields,
 } from "./animationDefaults";
 import {
   charToKeyLabel,
   getCharDelayFixed,
   getPauseBeforeSendFixed,
+  getContactTypingDurationMs,
   TypingSpeed,
 } from "./keyboardTyping";
 
@@ -37,6 +40,33 @@ function pushKeyframe(
   return timeMs;
 }
 
+function appendKeyboardOpen(
+  keyframes: TimelineKeyframe[],
+  startMs: number,
+  state: AnimationState
+): number {
+  if (state.showKeyboard && state.keyboardOpen) return startMs;
+
+  let t = startMs;
+
+  if (!state.showKeyboard) {
+    t = pushKeyframe(
+      keyframes,
+      t,
+      { showKeyboard: true, keyboardOpen: false },
+      state
+    );
+    t += 16;
+  }
+
+  if (!state.keyboardOpen) {
+    t = pushKeyframe(keyframes, t, { keyboardOpen: true }, state);
+    t += 230;
+  }
+
+  return t;
+}
+
 function appendKeyboardTyping(
   keyframes: TimelineKeyframe[],
   startMs: number,
@@ -47,22 +77,16 @@ function appendKeyboardTyping(
   const speed = (message.typingSpeed ?? "normal") as TypingSpeed;
   const text = message.content;
 
+  t = appendKeyboardOpen(keyframes, t, state);
   t = pushKeyframe(
     keyframes,
     t,
     {
-      ...resetAnimationFields(),
-      showKeyboard: true,
-      keyboardOpen: false,
-      draftText: "",
+      ...resetDraftFields(),
       keyboardTargetText: text,
     },
     state
   );
-
-  t += 16;
-  t = pushKeyframe(keyframes, t, { keyboardOpen: true }, state);
-  t += 230;
 
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
@@ -96,13 +120,15 @@ function appendKeyboardTyping(
   t = pushKeyframe(
     keyframes,
     t,
-    { draftText: "", showSendButton: false },
+    {
+      draftText: "",
+      showSendButton: false,
+      pressedKey: null,
+      keyboardTargetText: null,
+    },
     state
   );
   t += 80;
-  t = pushKeyframe(keyframes, t, { keyboardOpen: false }, state);
-  t += 230;
-  pushKeyframe(keyframes, t, resetAnimationFields(), state);
 
   return t;
 }
@@ -132,6 +158,8 @@ export function buildAnimationTimeline(
     state
   );
 
+  timeMs = appendKeyboardOpen(keyframes, timeMs, state);
+
   let previousContent = "";
 
   for (let i = 0; i < messages.length; i++) {
@@ -159,13 +187,17 @@ export function buildAnimationTimeline(
     if (shouldUseKeyboardTyping(message)) {
       timeMs = appendKeyboardTyping(keyframes, timeMs, message, state);
     } else if (message.showTyping) {
+      const typingMs = getContactTypingDurationMs(message);
       timeMs = pushKeyframe(
         keyframes,
         timeMs,
-        { isTyping: true, typingSender: message.sender },
+        {
+          isTyping: true,
+          typingSender: message.sender,
+        },
         state
       );
-      timeMs += message.typingDurationMs;
+      timeMs += typingMs;
       timeMs = pushKeyframe(
         keyframes,
         timeMs,
@@ -193,7 +225,7 @@ export function buildAnimationTimeline(
   timeMs = pushKeyframe(
     keyframes,
     timeMs,
-    { isPlaying: false, isComplete: true, ...resetAnimationFields() },
+    { isPlaying: false, isComplete: true, ...endAnimationKeyboardFields() },
     state
   );
 

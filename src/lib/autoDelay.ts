@@ -1,12 +1,20 @@
-const BASE_DELAY_MS = 800;
-const MS_PER_CHAR = 50;
-const MIN_DELAY_MS = 600;
-const MAX_DELAY_MS = 8000;
+/** Délai de base avant chaque message (mode auto). */
+export const AUTO_DELAY_BASE_MS = 400;
+/** Millisecondes ajoutées par caractère du message précédent. */
+export const AUTO_DELAY_MS_PER_CHAR = 24;
+export const AUTO_DELAY_MIN_MS = 320;
+export const AUTO_DELAY_MAX_MS = 4500;
+
+/** Délai manuel par défaut (si bascule en mode manuel). */
+export const DEFAULT_MESSAGE_DELAY_MS = 700;
 
 export function calculateAutoDelay(text: string): number {
   const length = text.trim().length;
-  const delay = BASE_DELAY_MS + length * MS_PER_CHAR;
-  return Math.min(MAX_DELAY_MS, Math.max(MIN_DELAY_MS, delay));
+  const delay = AUTO_DELAY_BASE_MS + length * AUTO_DELAY_MS_PER_CHAR;
+  return Math.min(
+    AUTO_DELAY_MAX_MS,
+    Math.max(AUTO_DELAY_MIN_MS, delay)
+  );
 }
 
 export function getMessageDelay(
@@ -17,4 +25,8 @@ export function getMessageDelay(
     return message.delayMs;
   }
   return calculateAutoDelay(previousMessageContent ?? message.content);
+}
+
+export function formatAutoDelayFormula(): string {
+  return `${AUTO_DELAY_BASE_MS} + ${AUTO_DELAY_MS_PER_CHAR}/car.`;
 }

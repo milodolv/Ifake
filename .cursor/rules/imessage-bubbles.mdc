@@ -1,0 +1,123 @@
+---
+description: Règles verrouillées bulles iMessage — formes, retours à la ligne, padding, alignement (référence validée)
+globs: src/components/imessage/**,src/lib/bubbleTextWrap.ts
+alwaysApply: false
+---
+
+# Bulles iMessage — référence validée
+
+S'applique **à chaque nouvelle conversation, chaque nouveau message, quel que soit l'expéditeur** (gris ou bleu). Réutiliser la logique existante — **ne jamais ajuster par index de bulle** (position dans la liste contact), toujours par **forme** (lignes, queue, groupe).
+
+## VERROUILLÉ — ne jamais modifier sans demande explicite
+
+### Queues SVG
+- Queue **uniquement** sur le dernier message d'un groupe consécutif (`isLastInGroup`).
+- Chemins/formes dans `bubblePath.ts` — **intouchables**.
+
+### Formes
+- **1 ligne** → pilule (extrémités gauche **et** droite rondes) : `ME_UNIFORM_PILL_RADIUS` / `CONTACT_UNIFORM_PILL_RADIUS`.
+- **2 lignes ou plus** → rectangle angles arrondis (`radiusBubble` = 18).
+- Bulles à queue rectangulaires : SVG avec `corners` fixes (pas `getContactPillCorners` / `getMePillCorners`).
+
+## Objectif visuel global
+
+Pour **chaque** bulle (1L, 2L, 3L, 4L, grise ou bleue) :
+- Retours à la ligne **beaux et équilibrés** (pas de coupure prématurée, pas de mot orphelin seul sur une ligne si évitable).
+- **Espace suffissant** entre le texte et les bords gauche **et** droit de la bulle.
+- Comportement **identique** que l'expéditeur soit « contact » ou « moi » — seuls les ajustements ci-dessous (par forme) s'appliquent.
+
+## Alignement des bords — RÈGLE ABSOLUE
+
+- **Bulles bleues (« moi »)** : l'**extrémité droite** de chaque bulle est **toujours alignée** verticalement entre toutes les bulles bleues de la conversation. Ne jamais laisser une bulle bleue dépasser ou reculer sur la droite.
+- **Bulles grises (« contact »)** : l'**extrémité gauche** de chaque bulle est **toujours alignée** verticalement entre toutes les bulles grises. Le corps de la bulle part de `CONTACT_BUBBLE_MARGIN_LEFT` ; les ajustements de padding élargissent vers la **droite**, jamais en décalant le bord gauche.
+
+Ces alignements doivent tenir **quelle que soit la conversation** (expéditeurs d'origine ou inversés), le nombre de lignes (1L–4L+) ou la présence d'une queue.
+
+## Retour à la ligne (`bubbleTextWrap.ts`)
+
+- Cible ~**30 caractères**/ligne (`BUBBLE_TARGET_CHARS_PER_LINE`), plafond **36** (`BUBBLE_ABSOLUTE_MAX_CHARS`).
+- Pipeline : `wrapBubbleTextAtMax` → `fillLinesUpward` → `rebalanceLineFill` (3+ lignes seulement).
+- **2 lignes** : `pickBestTwoLineLayout` — remplir au max la 1ʳᵉ ligne (ex. « …je lui dirai » / « tout 👍 »), rejeter 2ᵉ ligne trop courte (emoji seul).
+- **3+ lignes** : score d'équilibrage ; slack dernière ligne pondéré faiblement.
+- Texte rendu en `whiteSpace: pre` (pas de re-wrap CSS).
+- Ajuster l'algo si un message est moche, **sans** casser les cas validés.
+
+## Padding de base
+
+| Token | Valeur |
+|-------|--------|
+| `bubblePaddingX/Y` | 13 / 7 |
+| Extra contact X/Y/Right | +2 / +5 / +5 |
+| Extra moi X/Y/Right | +2 / +4 / +5 |
+
+## Bulles bleues (« moi »)
+
+- **Règle d'or** : extrémité **droite** toujours alignée (voir section Alignement des bords).
+- Mesure & alignement via `onMeBodyWidthReport`, `minMeBodyWidthPx`.
+- **Espace texte ↔ bord droit** constant (réf. « mes », « moi ! », « raconter »).
+- **Dernière bulle bleue avec queue** (fin de groupe consécutif, `shouldAlignLastMeTailRight`) :
+  - `LAST_ME_BUBBLE_SHIFT_LEFT_PX = 18` ; `reserveTailPadding={false}`.
+  - Si ligne max > bulle au-dessus : `minWidth = minMeBodyWidthPx + lastMeTextRightSlackPx` (expansion **vers la gauche**, pas padding-right).
+  - Slack : `CHAR_SLACK_PX = 6`, `MIN_TEXT_RIGHT_SLACK_PX = 3`, `TRIM_RIGHT_PADDING_PX = 5`.
+  - Réf. ligne : `getWidestBubbleLine` de la bulle « moi » juste au-dessus.
+
+## Bulles grises (« contact ») — ajustements par forme
+
+- **Règle d'or** : extrémité **gauche** toujours alignée (voir section Alignement des bords). Élargir les bulles vers la droite uniquement ; compenser le padding queue pour l'alignement du **texte**, pas du bord gauche du corps.
+
+**Ne jamais utiliser l'index** (1ʳᵉ/2ᵉ/3ᵉ bulle grise). Utiliser les conditions ci-dessous.
+
+| Condition | Effet |
+|-----------|--------|
+| 1L, 1ʳᵉ msg conv., solo + queue (`isFirstInConversation && showLeftTail && !sameSenderAsPrev`) | Tighten gauche **6 px** |
+| 1L + queue de groupe (`isGroupedContactTail && lineCount === 1`) | Tighten gauche **5 px** ; expand droite **6 px** (sans déplacer le texte) |
+| 2L + queue de groupe, pas dernière contact (`isGroupedContactTail && lineCount === 2 && !isLastContactBubble`) | Tighten gauche **6 px** (aligne avec bulle au-dessus malgré padding queue) ; expand droite **8 px** |
+| 4L+, milieu de groupe sans queue (`lineCount >= 4 && !showLeftTail`) | Shift texte droite **6 px** ; expand droite **8 px** |
+| Dernière contact, 3L+ (`isLastContactBubble && lineCount >= 3`) | Shift texte droite **5 px** ; expand droite **12 px** (8+4) |
+| Dernière contact, 2L | Tighten gauche **6 px** |
+| Dernière contact, 1L | Tighten gauche **6 px** |
+| Bulle contact sans queue (milieu de groupe) | Padding standard ; `CONTACT_BUBBLE_EXTRA_PADDING_RIGHT` |
+
+Constantes dans `MessageBubble.tsx` — ajuster les px si un cas validé dérape, **sans** changer la logique de détection.
+
+## Espacements entre bulles (`theme.ts`)
+
+- Même expéditeur consécutif : `spacingSameSender = 6`.
+- Expéditeurs différents : `spacingDiffSender = 5`.
+
+## Zone haute — scroll & dégradé (VERROUILLÉ)
+
+- Conversation **scrollable librement** pendant l'animation (sans reset au fil des messages).
+- Bulles passent **derrière** tout le chrome du haut : barre de statut (transparente), Retour, contact, Caméra.
+- **Dégradé noir** (`conversationTopFadeHeight`) au-dessus des bulles, sous le chrome — assombrit le texte qui remonte.
+- **Ne jamais supprimer** ce scroll ni ce dégradé sans demande explicite.
+
+## Barre iMessage (saisie clavier)
+
+- Texte en cours : **pas de truncate** (`...`) — retour à la ligne naturel (`pre-wrap`).
+- Le champ **grandit en hauteur** ; bouton « + » et envoi alignés en bas.
+- 1 ligne vide → pilule ; brouillon multiligne → rectangle arrondi (`INPUT_FIELD_RADIUS = 22`).
+
+## Indicateur « contact en train d'écrire » (VERROUILLÉ)
+
+- Bulle **pilule agrandie** + queue **2 cercles séparés** (moyen collé à la bulle, petit détaché) — **pas** la queue SVG des messages (`bubblePath.ts`).
+- Trois points **centrés** dans la pilule ; animation sautillante séquentielle.
+- Position **fixe au-dessus du bouton « + »** — pas dans le flux scroll.
+- **Ne pas** remettre l'indicateur dans le flux scroll des messages.
+
+## Fichiers clés
+
+- `bubbleTextWrap.ts` — découpage & équilibrage lignes
+- `MessageBubble.tsx` — rendu, padding, formes, alignement
+- `IMessagePreview.tsx` — groupes, mesure largeurs bleues, `isLastContactBubble`
+- `bubblePath.ts` — SVG queues (**verrouillé**)
+- `theme.ts` — espacements & tokens
+
+## Interdits sans demande explicite
+
+- Modifier queues SVG ou règle pilule (1L) / rectangle (2L+).
+- Ajuster padding par **index** de bulle dans la conversation.
+- Casser l'alignement du **bord droit** des bulles bleues.
+- Casser l'alignement du **bord gauche** des bulles grises.
+- Supprimer l'espace texte ↔ bord droit (bulles bleues).
+- Simuler l'alignement bleu via padding-right (préférer `minWidth` + expansion à gauche).

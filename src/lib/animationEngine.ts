@@ -1,11 +1,12 @@
 import { Message, ConversationSettings, AnimationState } from "./types";
 import { getMessageDelay } from "./autoDelay";
 import { formatDate, sleep } from "./utils";
-import { resetAnimationFields } from "./animationDefaults";
+import { resetAnimationFields, resetDraftFields, endAnimationKeyboardFields } from "./animationDefaults";
 import {
   charToKeyLabel,
   getCharDelay,
   getPauseBeforeSend,
+  getContactTypingDurationMs,
   TypingSpeed,
 } from "./keyboardTyping";
 
@@ -24,26 +25,42 @@ function shouldUseKeyboardTyping(message: Message): boolean {
   );
 }
 
+async function openKeyboardIfNeeded(
+  onUpdate: AnimationCallbacks["onUpdate"],
+  shouldStop?: () => boolean,
+  alreadyOpen?: boolean
+): Promise<boolean> {
+  if (alreadyOpen) return true;
+
+  onUpdate({
+    ...resetDraftFields(),
+    showKeyboard: true,
+    keyboardOpen: false,
+  });
+  await sleep(16);
+  onUpdate({ keyboardOpen: true });
+  await sleep(230);
+  if (shouldStop?.()) return false;
+  return true;
+}
+
 async function playKeyboardTyping(
   message: Message,
   onUpdate: AnimationCallbacks["onUpdate"],
-  shouldStop?: () => boolean
+  shouldStop?: () => boolean,
+  keyboardAlreadyOpen = false
 ): Promise<void> {
   const speed = (message.typingSpeed ?? "normal") as TypingSpeed;
   const text = message.content;
 
+  if (!(await openKeyboardIfNeeded(onUpdate, shouldStop, keyboardAlreadyOpen))) {
+    return;
+  }
+
   onUpdate({
-    ...resetAnimationFields(),
-    showKeyboard: true,
-    keyboardOpen: false,
-    draftText: "",
+    ...resetDraftFields(),
     keyboardTargetText: text,
   });
-
-  await sleep(16);
-  onUpdate({ keyboardOpen: true });
-  await sleep(230);
-  if (shouldStop?.()) return;
 
   for (let i = 0; i < text.length; i++) {
     if (shouldStop?.()) return;
@@ -75,12 +92,57 @@ async function playKeyboardTyping(
   await sleep(180);
   if (shouldStop?.()) return;
 
-  onUpdate({ draftText: "", showSendButton: false });
+  onUpdate({ draftText: "", showSendButton: false, pressedKey: null, keyboardTargetText: null });
   await sleep(80);
+}
 
-  onUpdate({ keyboardOpen: false });
-  await sleep(230);
-  onUpdate(resetAnimationFields());
+const KEY_PRESS_MS = 50 + 90;
+const KEYBOARD_SEND_MS = 180 + 80;
+
+async function playContactTyping(
+  message: Message,
+  onUpdate: AnimationCallbacks["onUpdate"],
+  shouldStop?: () => boolean
+): Promise<void> {
+  const fallbackMs = getContactTypingDurationMs(message);
+
+  if (message.imageUrl || message.content.length === 0) {
+    onUpdate({
+      isTyping: true,
+      typingSender: message.sender,
+    });
+    await sleep(fallbackMs);
+    if (shouldStop?.()) return;
+    onUpdate({ isTyping: false, typingSender: null });
+    return;
+  }
+
+  const speed = (message.typingSpeed ?? "normal") as TypingSpeed;
+  const text = message.content;
+
+  onUpdate({
+    isTyping: true,
+    typingSender: message.sender,
+  });
+
+  for (let i = 0; i < text.length; i++) {
+    if (shouldStop?.()) return;
+
+    const keyLabel = charToKeyLabel(text[i]);
+    if (keyLabel) await sleep(KEY_PRESS_MS);
+
+    if (i < text.length - 1) {
+      await sleep(getCharDelay(speed));
+    }
+  }
+
+  await sleep(getPauseBeforeSend());
+  if (shouldStop?.()) return;
+
+  await sleep(KEYBOARD_SEND_MS);
+  if (shouldStop?.()) return;
+
+  onUpdate({ isTyping: false, typingSender: null });
 }
 
 export async function playConversationAnimation(
@@ -101,7 +163,10 @@ export async function playConversationAnimation(
     ...resetAnimationFields(),
   });
 
+  if (!(await openKeyboardIfNeeded(onUpdate, shouldStop))) return;
+
   let previousContent = "";
+  let keyboardOpen = true;
 
   for (let i = 0; i < messages.length; i++) {
     if (shouldStop?.()) return;
@@ -129,16 +194,12 @@ export async function playConversationAnimation(
     const useKeyboard = shouldUseKeyboardTyping(message);
 
     if (useKeyboard) {
-      await playKeyboardTyping(message, onUpdate, shouldStop);
+      await playKeyboardTyping(message, onUpdate, shouldStop, keyboardOpen);
+      keyboardOpen = true;
       if (shouldStop?.()) return;
     } else if (message.showTyping) {
-      onUpdate({
-        isTyping: true,
-        typingSender: message.sender,
-      });
-      await sleep(message.typingDurationMs);
+      await playContactTyping(message, onUpdate, shouldStop);
       if (shouldStop?.()) return;
-      onUpdate({ isTyping: false, typingSender: null });
     }
 
     onUpdate({
@@ -160,5 +221,5 @@ export async function playConversationAnimation(
     onUpdate({ showReadReceipt: true });
   }
 
-  onUpdate({ isPlaying: false, isComplete: true, ...resetAnimationFields() });
+  onUpdate({ isPlaying: false, isComplete: true, ...endAnimationKeyboardFields() });
 }

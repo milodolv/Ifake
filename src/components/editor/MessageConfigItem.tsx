@@ -2,8 +2,11 @@
 
 import { Message } from "@/lib/types";
 import { useEditorStore } from "@/lib/store";
-import { calculateAutoDelay } from "@/lib/autoDelay";
+import { calculateAutoDelay, formatAutoDelayFormula } from "@/lib/autoDelay";
+import { getContactTypingDurationMs } from "@/lib/keyboardTyping";
 import { isSupabaseConfigured, uploadImage } from "@/lib/supabase/client";
+import { readFileAsDataUrl } from "@/lib/utils";
+import { VideoPlayOverlay } from "@/components/imessage/VideoPlayOverlay";
 
 interface MessageConfigItemProps {
   message: Message;
@@ -20,6 +23,11 @@ export function MessageConfigItem({
   const removeMessage = useEditorStore((s) => s.removeMessage);
   const duplicateMessage = useEditorStore((s) => s.duplicateMessage);
   const moveMessage = useEditorStore((s) => s.moveMessage);
+  const messages = useEditorStore((s) => s.messages);
+
+  const previousContent =
+    index > 0 ? messages[index - 1]?.content ?? "" : message.content;
+  const autoDelayPreviewMs = calculateAutoDelay(previousContent);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -28,15 +36,19 @@ export function MessageConfigItem({
     if (isSupabaseConfigured) {
       try {
         const url = await uploadImage(file);
-        updateMessage(message.id, { imageUrl: url, content: "" });
+        updateMessage(message.id, {
+          imageUrl: url,
+          content: "",
+          showVideoOverlay: true,
+        });
         return;
       } catch {
         // fallback local
       }
     }
 
-    const url = URL.createObjectURL(file);
-    updateMessage(message.id, { imageUrl: url, content: "" });
+    const url = await readFileAsDataUrl(file);
+    updateMessage(message.id, { imageUrl: url, content: "", showVideoOverlay: true });
   };
 
   return (
@@ -89,7 +101,7 @@ export function MessageConfigItem({
                 sender,
                 ...(sender === "me"
                   ? { showKeyboardTyping: true, showTyping: false }
-                  : {}),
+                  : { showTyping: true, showKeyboardTyping: false }),
               })
             }
             className={`flex-1 py-1.5 text-sm rounded-md transition ${
@@ -116,13 +128,16 @@ export function MessageConfigItem({
           className="w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30 resize-none"
         />
       ) : (
-        <div className="relative">
+        <div className="relative inline-block overflow-hidden rounded-md">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={message.imageUrl}
             alt=""
-            className="rounded-md max-h-24 object-cover"
+            className="block max-h-24 object-cover"
           />
+          {message.showVideoOverlay !== false ? (
+            <VideoPlayOverlay size={32} />
+          ) : null}
           <button
             type="button"
             onClick={() => updateMessage(message.id, { imageUrl: undefined })}
@@ -142,6 +157,20 @@ export function MessageConfigItem({
           onChange={handleImageUpload}
         />
       </label>
+
+      {message.imageUrl && (
+        <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={message.showVideoOverlay !== false}
+            onChange={(e) =>
+              updateMessage(message.id, { showVideoOverlay: e.target.checked })
+            }
+            className="accent-accent"
+          />
+          Afficher la pastille vidéo
+        </label>
+      )}
 
       <div className="space-y-2 text-sm">
         <div className="flex items-center justify-between">
@@ -165,7 +194,9 @@ export function MessageConfigItem({
         </div>
         {message.delayMode === "auto" ? (
           <p className="text-xs text-white/40">
-            ~{calculateAutoDelay(message.content)} ms (800 + 50/car.)
+            {index === 0
+              ? "Premier message — pas de délai avant affichage"
+              : `~${autoDelayPreviewMs} ms (${formatAutoDelayFormula()}, msg. précédent)`}
           </p>
         ) : (
           <input
@@ -197,17 +228,56 @@ export function MessageConfigItem({
         )}
       </label>
       {message.showTyping && message.sender === "contact" && (
-        <input
-          type="number"
-          value={message.typingDurationMs}
-          onChange={(e) =>
-            updateMessage(message.id, {
-              typingDurationMs: parseInt(e.target.value) || 0,
-            })
-          }
-          className="w-full rounded bg-white/5 border border-white/10 px-2 py-1 text-white text-sm"
-          placeholder="Durée frappe (ms)"
-        />
+        <>
+          {!message.imageUrl && message.content.length > 0 ? (
+            <p className="text-xs text-white/40">
+              Durée auto :{" "}
+              {(getContactTypingDurationMs(message) / 1000)
+                .toFixed(1)
+                .replace(".", ",")}
+              s (même rythme que le clavier)
+            </p>
+          ) : (
+            <input
+              type="number"
+              value={message.typingDurationMs}
+              onChange={(e) =>
+                updateMessage(message.id, {
+                  typingDurationMs: parseInt(e.target.value) || 0,
+                })
+              }
+              className="w-full rounded bg-white/5 border border-white/10 px-2 py-1 text-white text-sm"
+              placeholder="Durée frappe (ms)"
+            />
+          )}
+          {!message.imageUrl && message.content.length > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-white/60">Vitesse de frappe</span>
+              <div className="flex gap-1">
+                {(["slow", "normal", "fast"] as const).map((speed) => (
+                  <button
+                    key={speed}
+                    type="button"
+                    onClick={() =>
+                      updateMessage(message.id, { typingSpeed: speed })
+                    }
+                    className={`px-2 py-0.5 text-xs rounded ${
+                      (message.typingSpeed ?? "normal") === speed
+                        ? "bg-accent/30 text-accent"
+                        : "bg-white/5 text-white/50"
+                    }`}
+                  >
+                    {speed === "slow"
+                      ? "Lent"
+                      : speed === "normal"
+                        ? "Normal"
+                        : "Rapide"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {message.sender === "me" && !message.imageUrl && (

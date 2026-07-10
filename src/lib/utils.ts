@@ -1,10 +1,14 @@
+/** Première lettre du nom — ignore emojis, chiffres et symboles. */
 export function getInitials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
+  for (const char of name) {
+    if (char.trim() === "") continue;
+    const upper = char.toLocaleUpperCase("fr-FR");
+    const lower = char.toLocaleLowerCase("fr-FR");
+    if (upper !== lower) {
+      return upper;
+    }
+  }
+  return "";
 }
 
 const AVATAR_COLORS = [
@@ -63,4 +67,13 @@ export function downloadBlob(blob: Blob, filename: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }

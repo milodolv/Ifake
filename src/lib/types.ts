@@ -1,3 +1,5 @@
+import { DEFAULT_MESSAGE_DELAY_MS } from "./autoDelay";
+
 export type Sender = "me" | "contact";
 
 export type DelayMode = "auto" | "manual";
@@ -6,6 +8,8 @@ export interface Message {
   id: string;
   content: string;
   imageUrl?: string;
+  /** Pastille lecture vidéo sur les images (défaut : true si image). */
+  showVideoOverlay?: boolean;
   sender: Sender;
   delayMode: DelayMode;
   delayMs: number;
@@ -97,8 +101,8 @@ export const createDefaultMessage = (sender: Sender = "contact"): Message => ({
   content: "",
   sender,
   delayMode: "auto",
-  delayMs: 1500,
-  showTyping: false,
+  delayMs: DEFAULT_MESSAGE_DELAY_MS,
+  showTyping: sender === "contact",
   typingDurationMs: 1200,
   showKeyboardTyping: sender === "me",
   typingSpeed: "normal",
@@ -106,3 +110,25 @@ export const createDefaultMessage = (sender: Sender = "contact"): Message => ({
   timestampText: "Aujourd'hui 14:32",
   timestampMode: "auto",
 });
+
+/** Fusionne un message sauvegardé avec les défauts courants (migration douce). */
+export function normalizeMessage(message: Message): Message {
+  const merged: Message = {
+    ...createDefaultMessage(message.sender),
+    ...message,
+  };
+
+  if (merged.sender === "contact") {
+    merged.showTyping = true;
+    merged.showKeyboardTyping = false;
+  }
+
+  merged.delayMode = "auto";
+  merged.delayMs = DEFAULT_MESSAGE_DELAY_MS;
+
+  if (merged.imageUrl) {
+    merged.showVideoOverlay = merged.showVideoOverlay ?? true;
+  }
+
+  return merged;
+}

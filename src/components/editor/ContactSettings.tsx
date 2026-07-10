@@ -2,6 +2,11 @@
 
 import { useEditorStore } from "@/lib/store";
 import { isSupabaseConfigured, uploadImage } from "@/lib/supabase/client";
+import { readFileAsDataUrl } from "@/lib/utils";
+
+function clampBatteryLevel(value: number): number {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
 
 export function ContactSettings() {
   const settings = useEditorStore((s) => s.settings);
@@ -21,7 +26,12 @@ export function ContactSettings() {
       }
     }
 
-    setSettings({ contactPhotoUrl: URL.createObjectURL(file) });
+    try {
+      const url = await readFileAsDataUrl(file);
+      setSettings({ contactPhotoUrl: url });
+    } catch {
+      // ignore
+    }
   };
 
   return (
@@ -135,6 +145,28 @@ export function ContactSettings() {
             </div>
           )}
 
+          <div className="space-y-2 pt-1 border-t border-white/10">
+            <label className="block text-xs font-medium text-white/50 uppercase tracking-wide">
+              Batterie (%)
+            </label>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={settings.statusBarBatteryLevel}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                if (!Number.isFinite(value)) return;
+                setSettings({
+                  statusBarBatteryAuto: false,
+                  statusBarBatteryLevel: clampBatteryLevel(value),
+                });
+              }}
+              className="w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-white tabular-nums"
+              placeholder="Ex. 25"
+            />
+          </div>
+
           <div className="flex items-center justify-between">
             <span className="text-sm text-white/60">Batterie automatique</span>
             <button
@@ -158,27 +190,11 @@ export function ContactSettings() {
             </button>
           </div>
 
-          {!settings.statusBarBatteryAuto && (
-            <div>
-              <label className="block text-xs text-white/50 mb-1">
-                Niveau batterie (%)
-              </label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={settings.statusBarBatteryLevel}
-                onChange={(e) => {
-                  const value = Number(e.target.value);
-                  if (!Number.isFinite(value)) return;
-                  setSettings({
-                    statusBarBatteryLevel: Math.max(0, Math.min(100, value)),
-                  });
-                }}
-                className="w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 text-sm text-white"
-                placeholder="75"
-              />
-            </div>
+          {settings.statusBarBatteryAuto && (
+            <p className="text-xs text-white/40">
+              Le niveau varie automatiquement entre les conversations. Désactive
+              pour utiliser un pourcentage fixe.
+            </p>
           )}
         </>
       )}

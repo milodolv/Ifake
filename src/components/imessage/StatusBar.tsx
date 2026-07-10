@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { formatTime24 } from "@/lib/formatTime24";
-import { STATUS_BAR_TIME_FONT } from "./theme";
+import { STATUS_BAR_TIME_FONT, IMESSAGE } from "./theme";
 import { StatusBarIcon } from "./StatusBarIcon";
 
 interface StatusBarProps {
@@ -180,45 +180,60 @@ export function StatusBar({
   const liveTime = useLiveTime24(useLiveTime, time);
   const displayTime = useLiveTime ? liveTime : time;
   const c = darkMode ? "#FFFFFF" : "#000000";
+  const timePaddingLeft =
+    IMESSAGE.headerPaddingLeft +
+    (IMESSAGE.headerButtonSize - IMESSAGE.headerBackChevronSize) / 2 +
+    IMESSAGE.statusBarTimeNudgeX;
 
   return (
     <div
-      className="shrink-0 flex items-end justify-between"
+      className="relative"
       style={{
         height: 54,
-        paddingLeft: 27,
-        paddingRight: 22,
-        paddingBottom: 4,
         color: c,
       }}
     >
-      <StatusBarTime time={displayTime} color={c} />
-
       <div
-        className="flex items-center"
-        style={{ transform: "translateY(-1.5px)" }}
+        className="flex items-end justify-between h-full"
+        style={{
+          paddingLeft: timePaddingLeft,
+          paddingRight: 22,
+          paddingBottom: 0,
+          transform: `translateY(-${IMESSAGE.statusBarLift}px)`,
+        }}
       >
-        <StatusBarIcon
-          name="cellularbars"
-          size={STATUS_ICON_SIZE}
-          color={c}
-          weight={600}
-        />
+        <div style={{ transform: `translateY(-${IMESSAGE.statusBarTimeNudgeY}px)` }}>
+          <StatusBarTime time={displayTime} color={c} />
+        </div>
+
         <div
-          style={{ width: STATUS_ICON_GAP_CELLULAR_WIFI, flexShrink: 0 }}
-          aria-hidden
-        />
-        <StatusBarIcon
-          name="wifi"
-          size={STATUS_ICON_SIZE}
-          color={c}
-          weight={600}
-        />
-        <div
-          style={{ width: STATUS_ICON_GAP_WIFI_BATTERY, flexShrink: 0 }}
-          aria-hidden
-        />
-        <StatusBarBattery level={batteryLevel} darkMode={darkMode} />
+          className="flex items-center"
+          style={{
+            transform: `translateY(-${IMESSAGE.statusBarIconsNudgeY}px) translateX(-${IMESSAGE.statusBarIconsNudgeX}px)`,
+          }}
+        >
+          <StatusBarIcon
+            name="cellularbars"
+            size={STATUS_ICON_SIZE}
+            color={c}
+            weight={600}
+          />
+          <div
+            style={{ width: STATUS_ICON_GAP_CELLULAR_WIFI, flexShrink: 0 }}
+            aria-hidden
+          />
+          <StatusBarIcon
+            name="wifi"
+            size={STATUS_ICON_SIZE}
+            color={c}
+            weight={600}
+          />
+          <div
+            style={{ width: STATUS_ICON_GAP_WIFI_BATTERY, flexShrink: 0 }}
+            aria-hidden
+          />
+          <StatusBarBattery level={batteryLevel} darkMode={darkMode} />
+        </div>
       </div>
     </div>
   );
