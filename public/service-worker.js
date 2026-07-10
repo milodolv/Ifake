@@ -1,4 +1,4 @@
-const CACHE_NAME = "ifake-v2";
+const CACHE_NAME = "ifake-v3";
 
 const PRECACHE_URLS = [
   "/",
