@@ -1,6 +1,13 @@
-const CACHE_NAME = "ifake-v1";
+const CACHE_NAME = "ifake-v2";
 
-const PRECACHE_URLS = ["/", "/editor", "/manifest.json", "/icon.svg"];
+const PRECACHE_URLS = [
+  "/",
+  "/editor",
+  "/manifest.json",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-180.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

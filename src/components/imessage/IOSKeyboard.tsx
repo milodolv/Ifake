@@ -556,7 +556,7 @@ function InputBar({
             {hasDraft ? (
               <span
                 ref={draftRef}
-                className="min-w-0 max-w-full ifake-export-text"
+                className="min-w-0 max-w-full"
                 data-export-input-draft
                 style={{
                   whiteSpace: useSingleLineLayout ? "nowrap" : "pre-wrap",
@@ -585,6 +585,7 @@ function InputBar({
                   }}
                 />
                 <span
+                  data-export-input-placeholder
                   style={{
                     fontWeight: 585,
                     fontVariationSettings: '"wght" 585',
@@ -596,6 +597,7 @@ function InputBar({
               </span>
             ) : (
               <span
+                data-export-input-placeholder
                 style={{
                   fontWeight: 585,
                   fontVariationSettings: '"wght" 585',
@@ -946,6 +948,7 @@ export function IOSKeyboard({
             </Key>
             <Key pressedKey={pressedKey} flex={BOTTOM_ROW_SPACE_FLEX}>
               <span
+                data-export-space-label
                 style={{
                   position: "absolute",
                   right: 7,
@@ -980,13 +983,14 @@ export function IOSKeyboard({
 
         <div
           className="flex items-end justify-between"
+          data-export-globe-row
           style={{
             height: 54,
             padding: `${GLOBE_ROW_TOP_PADDING}px 22px ${KEYBOARD_BOTTOM_PADDING}px`,
             backgroundColor: PANEL_BG,
           }}
         >
-          <span style={{ transform: `translateY(${GLOBE_ROW_ICON_NUDGE_Y}px)`, display: "inline-flex" }}>
+          <span data-export-globe-icon style={{ transform: `translateY(${GLOBE_ROW_ICON_NUDGE_Y}px)`, display: "inline-flex" }}>
             <KeyboardIcon
               name="globe"
               size={GLOBE_MIC_ICON_SIZE}
@@ -995,7 +999,7 @@ export function IOSKeyboard({
               strokeWidth={ICON_SYSTEM_STROKE}
             />
           </span>
-          <span style={{ transform: `translateY(${GLOBE_ROW_ICON_NUDGE_Y}px)`, display: "inline-flex" }}>
+          <span data-export-globe-icon style={{ transform: `translateY(${GLOBE_ROW_ICON_NUDGE_Y}px)`, display: "inline-flex" }}>
             <KeyboardIcon
               name="mic"
               size={GLOBE_MIC_ICON_SIZE}

@@ -134,7 +134,21 @@ body {
 
 /* Export vidéo — layout stable pendant la capture html2canvas */
 .ifake-export-capture {
-  --ifake-export-text-nudge: -3px;
+  --ifake-export-text-nudge: -8px;
+  --ifake-export-key-nudge: -8px;
+  --ifake-export-bubble-nudge: -8px;
+  --ifake-export-input-nudge: -10px;
+  --ifake-export-suggestion-nudge: -11px;
+  --ifake-export-contact-name-nudge: -4px;
+  --ifake-export-avatar-nudge: -5px;
+  --ifake-export-icon-nudge: -8px;
+  --ifake-export-key-glyphs-nudge: -8px;
+  --ifake-export-key-callout-nudge: -5px;
+  --ifake-export-globe-icon-nudge: 3px;
+  --ifake-export-bubble-weight: 508;
+  --ifake-export-input-weight: 505;
+  --ifake-export-body-weight: 505;
+  --ifake-export-contact-weight: 620;
 }
 
 .ifake-export-capture,
@@ -159,7 +173,84 @@ body {
 }
 
 .ifake-export-capture [data-export-key-callout-label] {
-  transform: translateY(0) !important;
+  transform: translateY(var(--ifake-export-key-callout-nudge)) !important;
+}
+
+.ifake-export-capture [data-export-key-cap] .ifake-export-text {
+  position: relative;
+  top: var(--ifake-export-key-nudge);
+}
+
+.ifake-export-capture [data-export-suggestion-text] {
+  position: relative;
+  top: var(--ifake-export-suggestion-nudge) !important;
+  font-weight: var(--ifake-export-body-weight) !important;
+  font-variation-settings: normal !important;
+}
+
+.ifake-export-capture [data-export-icon],
+.ifake-export-capture [data-export-key-glyphs] {
+  position: relative;
+  top: var(--ifake-export-icon-nudge) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ifake-export-capture [data-export-key-glyphs] {
+  top: var(--ifake-export-key-glyphs-nudge) !important;
+}
+
+.ifake-export-capture [data-export-header-button] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.ifake-export-capture svg[data-export-icon] {
+  position: relative;
+  top: var(--ifake-export-icon-nudge) !important;
+  display: block;
+}
+
+.ifake-export-capture [data-export-input-placeholder] {
+  position: relative;
+  top: var(--ifake-export-input-nudge);
+  font-weight: var(--ifake-export-input-weight) !important;
+  font-variation-settings: normal !important;
+  line-height: 22px;
+}
+
+.ifake-export-capture [data-export-contact-name] {
+  position: relative;
+  top: var(--ifake-export-contact-name-nudge) !important;
+  font-weight: var(--ifake-export-contact-weight) !important;
+  font-variation-settings: normal !important;
+}
+
+.ifake-export-capture [data-export-avatar-initial] {
+  position: relative;
+  top: var(--ifake-export-avatar-nudge);
+  display: inline-block;
+  line-height: 1;
+}
+
+.ifake-export-capture [data-export-globe-row] {
+  align-items: center !important;
+}
+
+.ifake-export-capture [data-export-globe-row] [data-export-globe-icon] {
+  transform: translateY(var(--ifake-export-globe-icon-nudge)) !important;
+}
+
+.ifake-export-capture [data-export-globe-row] [data-export-icon] {
+  top: 0 !important;
+}
+
+.ifake-export-capture [data-export-contact-pill] {
+  white-space: nowrap !important;
+  width: max-content !important;
+  align-items: center !important;
 }
 
 .ifake-export-capture [data-export-input-inner] {
@@ -174,6 +265,23 @@ body {
 
 .ifake-export-capture [data-export-bubble-text] {
   position: relative;
-  top: var(--ifake-export-text-nudge);
+  top: var(--ifake-export-bubble-nudge);
   display: inline-block;
+  line-height: 22px;
+  font-weight: var(--ifake-export-bubble-weight) !important;
+  font-variation-settings: normal !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+.ifake-export-capture [data-export-input-field],
+.ifake-export-capture [data-export-input-draft] {
+  font-weight: var(--ifake-export-input-weight) !important;
+  font-variation-settings: normal !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+.ifake-export-capture [data-export-input-draft] {
+  position: relative;
+  top: var(--ifake-export-input-nudge);
+  line-height: 22px;
 }

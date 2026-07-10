@@ -31,6 +31,7 @@ function HeaderIconButton({
 }) {
   return (
     <div
+      data-export-header-button
       className="flex items-center justify-center shrink-0"
       style={{
         width: size,
@@ -94,6 +95,7 @@ export function ConversationHeader({
           ) : (
             <div
               className="rounded-full flex items-center justify-center text-white"
+              data-export-contact-avatar
               style={{
                 width: AVATAR_SIZE,
                 height: AVATAR_SIZE,
@@ -106,12 +108,13 @@ export function ConversationHeader({
                 lineHeight: 1,
               }}
             >
-              {getInitials(name)}
+              <span data-export-avatar-initial>{getInitials(name)}</span>
             </div>
           )}
 
           <div
-            className="flex items-center rounded-full"
+            className="flex items-center rounded-full shrink-0"
+            data-export-contact-pill
             style={{
               marginTop: -NAME_PILL_OVERLAP,
               position: "relative",
@@ -119,13 +122,15 @@ export function ConversationHeader({
               backgroundColor: darkMode
                 ? IMESSAGE.pillBgDark
                 : IMESSAGE.pillBgLight,
-              padding: "7px 10px",
+              padding: "7px 12px",
               gap: 2,
+              whiteSpace: "nowrap",
+              width: "max-content",
+              maxWidth: "min(280px, calc(100% - 8px))",
             }}
           >
             <span
               data-export-contact-name
-              className="ifake-export-text"
               style={{
                 fontFamily: KEYBOARD_FONT,
                 fontSize: 17,
@@ -134,6 +139,7 @@ export function ConversationHeader({
                 color: darkMode ? "#FFFFFF" : "#000000",
                 letterSpacing: "-0.02em",
                 lineHeight: 1,
+                whiteSpace: "nowrap",
               }}
             >
               {name || "Contact"}

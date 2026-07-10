@@ -23,6 +23,7 @@ export function KeyboardIcon({
 }: KeyboardIconProps) {
   return (
     <span
+      data-export-icon
       className={className}
       aria-hidden
       style={{
@@ -58,6 +59,7 @@ export const KEYBOARD_FONT = IMESSAGE_FONT;
 export function Numeric123Label({ fontSize = 21 }: { fontSize?: number }) {
   return (
     <span
+      data-export-key-glyphs
       aria-hidden
       style={{
         fontFamily: KEYBOARD_FONT,
@@ -97,6 +99,7 @@ export function ShiftKeyIcon({
 export function EmojiFaceIcon({ size = 25 }: { size?: number }) {
   return (
     <svg
+      data-export-icon
       width={size}
       height={size}
       viewBox="0 0 24 24"

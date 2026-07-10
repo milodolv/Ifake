@@ -595,7 +595,7 @@ export function MessageBubble({
           zIndex: 2,
           whiteSpace: "pre",
         }}
-        className="ifake-export-text"
+        className="ifake-export-bubble-text"
         data-export-bubble-text
       >
         {textLines.join("\n")}
@@ -603,7 +603,7 @@ export function MessageBubble({
     </div>
   ) : (
     <span
-      className="ifake-export-text"
+      className="ifake-export-bubble-text"
       data-export-bubble-text
       style={{
         position: "relative",

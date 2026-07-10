@@ -20,6 +20,7 @@ export function HeaderIcon({
 }: HeaderIconProps) {
   return (
     <span
+      data-export-icon
       aria-hidden
       style={{
         display: "inline-flex",

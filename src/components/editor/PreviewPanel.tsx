@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
+import { flushSync } from "react-dom";
 import { useEditorStore, usePreviewAnimation } from "@/lib/store";
 import {
   buildAnimationTimeline,
@@ -237,8 +238,9 @@ export function PreviewPanel() {
           playbackRate: playbackRateRef.current,
           onProgress: setExportStatus,
           onFrameUpdate: (partial) => {
-            setExportAnimation((prev) => ({ ...prev, ...partial }));
-            return new Promise((r) => requestAnimationFrame(() => r()));
+            flushSync(() => {
+              setExportAnimation((prev) => ({ ...prev, ...partial }));
+            });
           },
         }
       );
