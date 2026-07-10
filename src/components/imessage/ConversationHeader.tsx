@@ -2,7 +2,11 @@
 
 import { getInitials } from "@/lib/utils";
 import { IMESSAGE, IMESSAGE_FONT_WEIGHT } from "./theme";
-import { HeaderIcon } from "./HeaderIcon";
+import {
+  ChevronCompactRightIcon,
+  ChevronLeftIcon,
+  VideoIcon,
+} from "./icons/svgIcons";
 import { KEYBOARD_FONT } from "./KeyboardIcon";
 
 interface ConversationHeaderProps {
@@ -71,7 +75,7 @@ export function ConversationHeader({
         }}
       >
         <HeaderIconButton style={{ marginTop: -HEADER_BUBBLE_LIFT }}>
-          <HeaderIcon name="chevron-left" size={25} weight={680} strokeWidth={0.58} />
+          <ChevronLeftIcon height={21} width={12} />
         </HeaderIconButton>
 
         <div
@@ -138,13 +142,7 @@ export function ConversationHeader({
             >
               {name || "Contact"}
             </span>
-            <HeaderIcon
-              name="chevron-compact-right"
-              size={15}
-              color="#8E8E93"
-              weight={760}
-              strokeWidth={0.48}
-            />
+            <ChevronCompactRightIcon height={15} width={9} />
           </div>
         </div>
 
@@ -152,12 +150,7 @@ export function ConversationHeader({
           size={HEADER_CAMERA_BUTTON_SIZE}
           style={{ marginTop: -HEADER_BUBBLE_LIFT }}
         >
-          <HeaderIcon
-            name="video"
-            size={HEADER_CAMERA_ICON_SIZE}
-            weight={500}
-            strokeWidth={0.28}
-          />
+          <VideoIcon size={HEADER_CAMERA_ICON_SIZE} />
         </HeaderIconButton>
       </div>
     </div>

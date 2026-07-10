@@ -86,6 +86,9 @@ function stabilizeClone(root: HTMLElement, doc: Document): void {
       .ifake-export-capture [data-export-key-callout-label] {
         transform: translateY(0) !important;
       }
+      .ifake-export-capture [data-keyboard-editor-icon] {
+        visibility: hidden !important;
+      }
     `;
     doc.head.appendChild(style);
   }

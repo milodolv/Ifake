@@ -177,3 +177,7 @@ body {
   top: var(--ifake-export-text-nudge);
   display: inline-block;
 }
+
+.ifake-export-capture [data-keyboard-editor-icon] {
+  visibility: hidden !important;
+}

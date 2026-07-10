@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { formatTime24 } from "@/lib/formatTime24";
 import { STATUS_BAR_TIME_FONT, IMESSAGE } from "./theme";
-import { StatusBarIcon } from "./StatusBarIcon";
+import { CellularbarsIcon, WifiIcon } from "./icons/svgIcons";
 
 interface StatusBarProps {
   time: string;
@@ -212,22 +212,12 @@ export function StatusBar({
             transform: `translateY(-${IMESSAGE.statusBarIconsNudgeY}px) translateX(-${IMESSAGE.statusBarIconsNudgeX}px)`,
           }}
         >
-          <StatusBarIcon
-            name="cellularbars"
-            size={STATUS_ICON_SIZE}
-            color={c}
-            weight={600}
-          />
+          <CellularbarsIcon height={12} width={17} />
           <div
             style={{ width: STATUS_ICON_GAP_CELLULAR_WIFI, flexShrink: 0 }}
             aria-hidden
           />
-          <StatusBarIcon
-            name="wifi"
-            size={STATUS_ICON_SIZE}
-            color={c}
-            weight={600}
-          />
+          <WifiIcon height={11} width={16} />
           <div
             style={{ width: STATUS_ICON_GAP_WIFI_BATTERY, flexShrink: 0 }}
             aria-hidden
