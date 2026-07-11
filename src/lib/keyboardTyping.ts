@@ -34,7 +34,7 @@ const CHAR_TO_KEY: Record<string, string> = {
 export function isFullyUppercaseMessage(text: string): boolean {
   let hasLetter = false;
   for (const ch of text) {
-    if (!/\p{L}/u.test(ch)) continue;
+    if (ch.toLowerCase() === ch.toUpperCase()) continue;
     hasLetter = true;
     if (ch !== ch.toUpperCase()) return false;
   }
