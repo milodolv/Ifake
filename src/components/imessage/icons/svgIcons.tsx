@@ -46,6 +46,7 @@ function SvgIcon({
       }}
     >
       <svg
+        data-export-icon
         width={displayWidth}
         height={displayHeight}
         viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}

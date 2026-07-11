@@ -5,6 +5,10 @@ import { Message, ConversationSettings, AnimationState } from "./types";
 import { sleep } from "./utils";
 import { DEFAULT_ANIMATION_STATE } from "./animationDefaults";
 import { IMESSAGE } from "@/components/imessage/theme";
+import {
+  applyScrollOffsetInClone,
+  scrollConversationToBottom,
+} from "./conversationScroll";
 
 export const EXPORT_WIDTH = 1080;
 export const EXPORT_HEIGHT = 1920;
@@ -28,28 +32,37 @@ const H264_CODEC_CANDIDATES = [
   "avc1.640028",
 ] as const;
 
+/** État visuel — évite html2canvas quand rien n'a changé entre deux frames. */
+function getCaptureSignature(state: AnimationState): string {
+  return JSON.stringify({
+    v: state.visibleMessageIds,
+    ts: state.activeTimestamps,
+    ty: state.isTyping,
+    tsr: state.typingSender,
+    rr: state.showReadReceipt,
+    kb: state.showKeyboard,
+    ko: state.keyboardOpen,
+    d: state.draftText,
+    pk: state.pressedKey,
+    ss: state.showSendButton,
+    kt: state.keyboardTargetText,
+  });
+}
+
 async function waitForPaint(): Promise<void> {
   await new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   });
 }
 
-function prepareCaptureTarget(element: HTMLElement): void {
-  const scroll = element.querySelector<HTMLElement>("[data-export-scroll]");
-  if (scroll) {
-    scroll.scrollTop = scroll.scrollHeight;
-  }
-}
-
-function stabilizeClone(root: HTMLElement, doc: Document): void {
+function stabilizeClone(
+  root: HTMLElement,
+  doc: Document,
+  scrollTop: number
+): void {
   root.classList.add("ifake-export-capture");
   root.style.transform = "none";
   root.style.opacity = "1";
-
-  root.querySelectorAll<HTMLElement>("*").forEach((el) => {
-    el.style.transition = "none";
-    el.style.animation = "none";
-  });
 
   root.querySelectorAll<HTMLElement>("[data-export-keyboard]").forEach((kb) => {
     const open = !kb.dataset.keyboardClosed;
@@ -73,18 +86,114 @@ function stabilizeClone(root: HTMLElement, doc: Document): void {
     const style = doc.createElement("style");
     style.id = "ifake-export-capture-styles";
     style.textContent = `
+      .ifake-export-capture {
+        --ifake-export-text-nudge: -8px;
+        --ifake-export-key-nudge: -8px;
+        --ifake-export-bubble-nudge: -8px;
+        --ifake-export-input-nudge: -10px;
+        --ifake-export-suggestion-nudge: -11px;
+        --ifake-export-contact-name-nudge: -4px;
+        --ifake-export-avatar-nudge: -5px;
+        --ifake-export-icon-nudge: -8px;
+        --ifake-export-key-glyphs-nudge: -8px;
+        --ifake-export-key-callout-nudge: -5px;
+        --ifake-export-globe-icon-nudge: 3px;
+        --ifake-export-bubble-weight: 508;
+        --ifake-export-input-weight: 505;
+        --ifake-export-body-weight: 505;
+        --ifake-export-contact-weight: 620;
+      }
       .ifake-export-capture .ifake-export-text {
         position: relative;
-        top: var(--ifake-export-text-nudge, -3px);
+        top: var(--ifake-export-text-nudge);
         line-height: 1.1;
+      }
+      .ifake-export-capture [data-export-bubble-text] {
+        position: relative;
+        top: var(--ifake-export-bubble-nudge);
+        line-height: 22px;
+        font-weight: var(--ifake-export-bubble-weight) !important;
+        font-variation-settings: normal !important;
+      }
+      .ifake-export-capture [data-export-input-field],
+      .ifake-export-capture [data-export-input-draft],
+      .ifake-export-capture [data-export-input-placeholder] {
+        font-weight: var(--ifake-export-input-weight) !important;
+        font-variation-settings: normal !important;
+      }
+      .ifake-export-capture [data-export-input-draft],
+      .ifake-export-capture [data-export-input-placeholder] {
+        position: relative;
+        top: var(--ifake-export-input-nudge);
+        line-height: 22px;
+      }
+      .ifake-export-capture [data-export-suggestion-text] {
+        position: relative;
+        top: var(--ifake-export-suggestion-nudge) !important;
+        font-weight: var(--ifake-export-body-weight) !important;
+        font-variation-settings: normal !important;
+      }
+      .ifake-export-capture [data-export-icon],
+      .ifake-export-capture [data-export-key-glyphs] {
+        position: relative;
+        top: var(--ifake-export-icon-nudge) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      .ifake-export-capture [data-export-key-glyphs] {
+        top: var(--ifake-export-key-glyphs-nudge) !important;
+      }
+      .ifake-export-capture svg[data-export-icon] {
+        position: relative;
+        top: var(--ifake-export-icon-nudge) !important;
+        display: block;
+      }
+      .ifake-export-capture [data-export-header-button] {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      .ifake-export-capture [data-export-space-label] {
+        bottom: 7px !important;
+      }
+      .ifake-export-capture [data-export-contact-name] {
+        position: relative;
+        top: var(--ifake-export-contact-name-nudge) !important;
+        font-weight: var(--ifake-export-contact-weight) !important;
+        font-variation-settings: normal !important;
+      }
+      .ifake-export-capture [data-export-avatar-initial] {
+        position: relative;
+        top: var(--ifake-export-avatar-nudge);
+        display: inline-block;
+        line-height: 1;
+      }
+      .ifake-export-capture [data-export-contact-pill] {
+        white-space: nowrap !important;
+        width: max-content !important;
+        align-items: center !important;
+      }
+      .ifake-export-capture [data-export-globe-row] {
+        align-items: center !important;
+      }
+      .ifake-export-capture [data-export-globe-row] [data-export-globe-icon] {
+        transform: translateY(var(--ifake-export-globe-icon-nudge)) !important;
+      }
+      .ifake-export-capture [data-export-globe-row] [data-export-icon] {
+        top: 0 !important;
       }
       .ifake-export-capture [data-export-key-cap] {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
       }
+      .ifake-export-capture [data-export-key-cap] .ifake-export-text {
+        position: relative;
+        top: var(--ifake-export-key-nudge);
+      }
       .ifake-export-capture [data-export-key-callout-label] {
-        transform: translateY(0) !important;
+        transform: translateY(var(--ifake-export-key-callout-nudge)) !important;
       }
       .ifake-export-capture [data-keyboard-editor-icon] {
         visibility: hidden !important;
@@ -92,6 +201,20 @@ function stabilizeClone(root: HTMLElement, doc: Document): void {
     `;
     doc.head.appendChild(style);
   }
+
+  applyScrollOffsetInClone(root, scrollTop);
+}
+
+let cachedForeignObjectRendering: boolean | null = null;
+
+function reportExportProgress(
+  frame: number,
+  totalFrames: number,
+  onProgress: ExportVideoOptions["onProgress"],
+  label = "Export"
+): void {
+  const progress = Math.round(((frame + 1) / totalFrames) * 100);
+  onProgress?.(`${label}… ${progress}%`);
 }
 
 function isBlankSnapshot(canvas: HTMLCanvasElement): boolean {
@@ -115,7 +238,8 @@ function isBlankSnapshot(canvas: HTMLCanvasElement): boolean {
 
 async function renderSnapshot(
   element: HTMLElement,
-  foreignObjectRendering: boolean
+  foreignObjectRendering: boolean,
+  scrollTop: number
 ): Promise<HTMLCanvasElement> {
   return html2canvas(element, {
     scale: EXPORT_CAPTURE_SCALE,
@@ -131,7 +255,7 @@ async function renderSnapshot(
     windowHeight: element.offsetHeight,
     imageTimeout: 0,
     onclone: (doc, cloned) => {
-      stabilizeClone(cloned as HTMLElement, doc);
+      stabilizeClone(cloned as HTMLElement, doc, scrollTop);
     },
   });
 }
@@ -141,11 +265,18 @@ async function captureFrame(
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D
 ): Promise<void> {
-  prepareCaptureTarget(element);
+  const scrollTop = scrollConversationToBottom(element);
+  const preferForeignObject = cachedForeignObjectRendering ?? false;
 
-  let snapshot = await renderSnapshot(element, true);
-  if (isBlankSnapshot(snapshot)) {
-    snapshot = await renderSnapshot(element, false);
+  let snapshot = await renderSnapshot(element, preferForeignObject, scrollTop);
+
+  if (cachedForeignObjectRendering === null) {
+    if (isBlankSnapshot(snapshot) && preferForeignObject) {
+      cachedForeignObjectRendering = false;
+      snapshot = await renderSnapshot(element, false, scrollTop);
+    } else {
+      cachedForeignObjectRendering = preferForeignObject;
+    }
   }
 
   ctx.imageSmoothingEnabled = true;
@@ -163,6 +294,23 @@ async function captureFrame(
   const y = (EXPORT_HEIGHT - h) / 2;
 
   ctx.drawImage(snapshot, x, y, w, h);
+}
+
+async function syncVisualFrame(
+  state: AnimationState,
+  signature: string,
+  lastSignature: { current: string },
+  captureTarget: HTMLElement,
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  onFrameUpdate: ExportVideoOptions["onFrameUpdate"]
+): Promise<void> {
+  if (signature === lastSignature.current) return;
+
+  await onFrameUpdate?.(state);
+  await waitForPaint();
+  await captureFrame(captureTarget, canvas, ctx);
+  lastSignature.current = signature;
 }
 
 async function resolveH264Codec(
@@ -228,15 +376,24 @@ async function exportWithWebCodecs(
   });
 
   const frameIntervalMs = 1000 / EXPORT_FPS;
+  const lastSignature = { current: "" };
+  let lastReportedProgress = -1;
 
   for (let frame = 0; frame < totalFrames; frame++) {
     const wallMs = frame * frameIntervalMs;
     const animMs = Math.min(wallMs * rate, durationMs);
     const state = getStateAtTime(keyframes, animMs);
+    const signature = getCaptureSignature(state);
 
-    await onFrameUpdate?.(state);
-    await waitForPaint();
-    await captureFrame(captureTarget, canvas, ctx);
+    await syncVisualFrame(
+      state,
+      signature,
+      lastSignature,
+      captureTarget,
+      canvas,
+      ctx,
+      onFrameUpdate
+    );
 
     const videoFrame = new VideoFrame(canvas, {
       timestamp: Math.round(frame * frameDurationUs),
@@ -246,9 +403,14 @@ async function exportWithWebCodecs(
     encoder.encode(videoFrame, { keyFrame: frame % EXPORT_FPS === 0 });
     videoFrame.close();
 
-    if (frame === 0 || frame === totalFrames - 1 || frame % 8 === 0) {
-      const progress = Math.round(((frame + 1) / totalFrames) * 100);
-      onProgress?.(`Export… ${progress}%`);
+    const progress = Math.round(((frame + 1) / totalFrames) * 100);
+    if (
+      frame === 0 ||
+      frame === totalFrames - 1 ||
+      progress !== lastReportedProgress
+    ) {
+      reportExportProgress(frame, totalFrames, onProgress);
+      lastReportedProgress = progress;
     }
   }
 
@@ -310,20 +472,34 @@ async function exportWithMediaRecorder(
 
   recorder.start(250);
   const frameIntervalMs = 1000 / EXPORT_FPS;
+  const lastSignature = { current: "" };
+  let lastReportedProgress = -1;
 
   for (let frame = 0; frame < totalFrames; frame++) {
     const wallMs = frame * frameIntervalMs;
     const animMs = Math.min(wallMs * rate, durationMs);
     const state = getStateAtTime(keyframes, animMs);
+    const signature = getCaptureSignature(state);
 
-    await onFrameUpdate?.(state);
-    await waitForPaint();
-    await captureFrame(captureTarget, canvas, ctx);
+    await syncVisualFrame(
+      state,
+      signature,
+      lastSignature,
+      captureTarget,
+      canvas,
+      ctx,
+      onFrameUpdate
+    );
     track.requestFrame?.();
 
-    if (frame % 8 === 0) {
-      const progress = Math.round(((frame + 1) / totalFrames) * 100);
-      onProgress?.(`Export WebM… ${progress}%`);
+    const progress = Math.round(((frame + 1) / totalFrames) * 100);
+    if (
+      frame === 0 ||
+      frame === totalFrames - 1 ||
+      progress !== lastReportedProgress
+    ) {
+      reportExportProgress(frame, totalFrames, onProgress, "Export WebM");
+      lastReportedProgress = progress;
     }
   }
 
@@ -360,6 +536,7 @@ export async function exportConversationVideo(
   );
   const frameDurationUs = Math.round(1_000_000 / EXPORT_FPS);
 
+  cachedForeignObjectRendering = null;
   onProgress?.("Préparation…");
   if (typeof document !== "undefined" && document.fonts?.ready) {
     await document.fonts.ready;

@@ -5,6 +5,7 @@ export const KEYBOARD_FONT = IMESSAGE_FONT;
 export function Numeric123Label({ fontSize = 21 }: { fontSize?: number }) {
   return (
     <span
+      data-export-key-glyphs
       aria-hidden
       data-keyboard-editor-icon
       style={{

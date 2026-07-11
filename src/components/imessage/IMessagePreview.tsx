@@ -98,7 +98,7 @@ export function IMessagePreview({
   const scrollToBottom = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight - el.clientHeight;
+    el.scrollTop = Math.max(0, el.scrollHeight - el.clientHeight);
   }, []);
 
   useEffect(() => {
