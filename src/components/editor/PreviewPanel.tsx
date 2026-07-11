@@ -332,12 +332,6 @@ export function PreviewPanel() {
         className="w-full max-w-lg flex flex-col items-center gap-2.5"
         style={{ marginTop: CONTROLS_GAP_BELOW_SCREEN }}
       >
-        <ExportSpeedSelector
-          playbackRate={playbackRate}
-          onSpeedChange={handleSpeedChange}
-          disabled={isExporting || previewBusy}
-        />
-
         <AnimationPlaybackControls
           currentMs={currentMs}
           durationMs={durationMs}
@@ -382,6 +376,12 @@ export function PreviewPanel() {
             {exportStatus}
           </p>
         )}
+
+        <ExportSpeedSelector
+          playbackRate={playbackRate}
+          onSpeedChange={handleSpeedChange}
+          disabled={isExporting || previewBusy}
+        />
       </div>
     </div>
   );
