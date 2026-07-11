@@ -37,6 +37,7 @@ export function IMessagePreview({
   exportCaptureMode = false,
 }: IMessagePreviewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesColumnRef = useRef<HTMLDivElement>(null);
   const meBodyWidthsRef = useRef(new Map<string, number>());
   const [meWidthVersion, setMeWidthVersion] = useState(0);
   const [keyboardOverlayHeight, setKeyboardOverlayHeight] = useState(
@@ -119,6 +120,17 @@ export function IMessagePreview({
     scrollToBottom,
   ]);
 
+  useLayoutEffect(() => {
+    const column = messagesColumnRef.current;
+    if (!column) return;
+
+    const observer = new ResizeObserver(() => {
+      scrollToBottom();
+    });
+    observer.observe(column);
+    return () => observer.disconnect();
+  }, [scrollToBottom]);
+
   useEffect(() => {
     const meIds = new Set(
       messages.filter((m) => m.sender === "me").map((m) => m.id)
@@ -152,6 +164,7 @@ export function IMessagePreview({
         }}
       >
           <div
+            ref={messagesColumnRef}
             style={{
               display: "flex",
               flexDirection: "column",
@@ -235,6 +248,7 @@ export function IMessagePreview({
                             ? (width) => reportMeBodyWidth(message.id, width)
                             : undefined
                         }
+                        onImageDisplaySizeReady={scrollToBottom}
                       />
                     </MessageBubbleEntrance>
                   )}

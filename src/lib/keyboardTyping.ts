@@ -30,6 +30,17 @@ const CHAR_TO_KEY: Record<string, string> = {
   ç: "C",
 };
 
+/** True si le message ne contient que des lettres en majuscules (accents inclus). */
+export function isFullyUppercaseMessage(text: string): boolean {
+  let hasLetter = false;
+  for (const ch of text) {
+    if (!/\p{L}/u.test(ch)) continue;
+    hasLetter = true;
+    if (ch !== ch.toUpperCase()) return false;
+  }
+  return hasLetter;
+}
+
 export function charToKeyLabel(char: string): string | null {
   if (char === " ") return null;
 

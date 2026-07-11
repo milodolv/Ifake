@@ -26,6 +26,8 @@ interface MessageBubbleProps {
   onMeBodyWidthReport?: (width: number) => void;
   /** Ligne de réf. — bulle bleue juste au-dessus (dernière bulle uniquement). */
   lastMeTailAlignRefLine?: string;
+  /** Appelé quand une image a fini de charger et que ses dimensions sont connues. */
+  onImageDisplaySizeReady?: () => void;
 }
 
 const CONTACT_BUBBLE_EXTRA_PADDING_Y = 5;
@@ -74,15 +76,15 @@ const IMAGE_MAX_HEIGHT = 280;
 function ImageMessageBubble({
   src,
   isMe,
-  isLastInGroup,
   marginTop,
   showVideoOverlay = true,
+  onDisplaySizeReady,
 }: {
   src: string;
   isMe: boolean;
-  isLastInGroup: boolean;
   marginTop: number;
   showVideoOverlay?: boolean;
+  onDisplaySizeReady?: () => void;
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [maxWidthPx, setMaxWidthPx] = useState(0);
@@ -105,6 +107,7 @@ function ImageMessageBubble({
     const layoutMaxWidth =
       maxWidthPx || Math.floor(IMESSAGE.screenWidth * 0.75);
 
+    setDisplaySize(null);
     let cancelled = false;
     const img = new window.Image();
     img.onload = () => {
@@ -133,12 +136,11 @@ function ImageMessageBubble({
     };
   }, [src, maxWidthPx]);
 
-  const r = IMESSAGE.radiusBubble;
-  const cornerStyle: CSSProperties = !isLastInGroup
-    ? isMe
-      ? ME_UNIFORM_PILL_RADIUS
-      : CONTACT_UNIFORM_PILL_RADIUS
-    : { borderRadius: r };
+  useLayoutEffect(() => {
+    if (displaySize) onDisplaySizeReady?.();
+  }, [displaySize, onDisplaySizeReady]);
+
+  const cornerStyle: CSSProperties = { borderRadius: IMESSAGE.radiusBubble };
 
   return (
     <div
@@ -488,6 +490,7 @@ export function MessageBubble({
   minMeBodyWidthPx,
   onMeBodyWidthReport,
   lastMeTailAlignRefLine,
+  onImageDisplaySizeReady,
 }: MessageBubbleProps) {
   const isMe = message.sender === "me";
   const plainBodyRef = useRef<HTMLDivElement>(null);
@@ -676,9 +679,9 @@ export function MessageBubble({
       <ImageMessageBubble
         src={message.imageUrl}
         isMe={isMe}
-        isLastInGroup={isLastInGroup}
         marginTop={marginTop}
         showVideoOverlay={message.showVideoOverlay !== false}
+        onDisplaySizeReady={onImageDisplaySizeReady}
       />
     );
   }

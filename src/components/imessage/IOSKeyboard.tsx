@@ -2,6 +2,7 @@
 
 import { useCallback, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { getKeyboardSuggestions } from "@/lib/keyboardSuggestions";
+import { isFullyUppercaseMessage } from "@/lib/keyboardTyping";
 import { Numeric123Label, KEYBOARD_FONT } from "./KeyboardIcon";
 import {
   ArrowUpIcon,
@@ -714,7 +715,9 @@ export function IOSKeyboard({
     onOverlayHeightChange,
   ]);
 
-  const shiftActive = draftText.length === 0;
+  const isAllCapsMessage =
+    Boolean(targetText) && isFullyUppercaseMessage(targetText!);
+  const shiftActive = draftText.length === 0 || isAllCapsMessage;
   const letterFontWeight = shiftActive
     ? LETTER_SHIFT_FONT_WEIGHT
     : IMESSAGE_FONT_WEIGHT.semibold;
