@@ -7,7 +7,6 @@ import {
   ArrowUpIcon,
   DeleteLeftIcon,
   FaceSmilingIcon,
-  GlobeIcon,
   MicIcon,
   PlusIcon,
   ReturnIcon,
@@ -63,12 +62,10 @@ const KEY_RADIUS = 6;
 const KEYBOARD_PANEL_TOP_RADIUS = 24;
 const KEYBOARD_PANEL_BOTTOM_RADIUS = 32;
 const BOTTOM_ROW_SIDE_FLEX = 0.93;
-const BOTTOM_ROW_123_FLEX = BOTTOM_ROW_SIDE_FLEX * 2;
-const BOTTOM_ROW_FACE_FLEX = BOTTOM_ROW_SIDE_FLEX;
+const BOTTOM_ROW_123_FLEX = BOTTOM_ROW_SIDE_FLEX * 3;
 const BOTTOM_ROW_RETURN_FLEX = BOTTOM_ROW_SIDE_FLEX * 2 + 0.22;
 const BOTTOM_ROW_SPACE_FLEX = 4.3;
 const BOTTOM_ROW_123_FONT_SIZE = 19.5;
-const BOTTOM_ROW_FACE_ICON_SIZE = 27;
 const SEND_BLUE = IMESSAGE.blue;
 
 const KEY_CALLOUT_WIDTH_EXTRA = 22;
@@ -812,9 +809,6 @@ export function IOSKeyboard({
             <Key pressedKey={pressedKey} flex={BOTTOM_ROW_123_FLEX}>
               <Numeric123Label fontSize={BOTTOM_ROW_123_FONT_SIZE} />
             </Key>
-            <Key pressedKey={pressedKey} flex={BOTTOM_ROW_FACE_FLEX}>
-              <FaceSmilingIcon size={BOTTOM_ROW_FACE_ICON_SIZE} editorOnly />
-            </Key>
             <Key pressedKey={pressedKey} flex={BOTTOM_ROW_SPACE_FLEX}>
               <span
                 style={{
@@ -839,7 +833,7 @@ export function IOSKeyboard({
               </span>
             </Key>
             <Key pressedKey={pressedKey} flex={BOTTOM_ROW_RETURN_FLEX}>
-              <ReturnIcon height={19} width={74} editorOnly />
+              <ReturnIcon size={28} editorOnly />
             </Key>
           </KeyRow>
         </div>
@@ -853,7 +847,7 @@ export function IOSKeyboard({
           }}
         >
           <span style={{ transform: `translateY(${GLOBE_ROW_ICON_NUDGE_Y}px)`, display: "inline-flex" }}>
-            <GlobeIcon size={GLOBE_MIC_ICON_SIZE} editorOnly />
+            <FaceSmilingIcon size={GLOBE_MIC_ICON_SIZE} editorOnly />
           </span>
           <span style={{ transform: `translateY(${GLOBE_ROW_ICON_NUDGE_Y}px)`, display: "inline-flex" }}>
             <MicIcon height={GLOBE_MIC_ICON_SIZE} width={20} editorOnly />
