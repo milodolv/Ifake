@@ -1,12 +1,13 @@
-const CACHE_NAME = "ifake-v2";
+const CACHE_NAME = "ifake-v3";
 
 const PRECACHE_URLS = [
   "/",
   "/editor",
   "/manifest.json",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/icon-180.png",
+  "/icon.png",
+  "/apple-touch-icon.png",
+  "/icons/app/icon-192.png",
+  "/icons/app/icon-512.png",
 ];
 
 self.addEventListener("install", (event) => {

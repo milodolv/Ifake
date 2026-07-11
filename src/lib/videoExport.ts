@@ -195,6 +195,9 @@ function stabilizeClone(
       .ifake-export-capture [data-export-key-callout-label] {
         transform: translateY(var(--ifake-export-key-callout-nudge)) !important;
       }
+      .ifake-export-capture [data-keyboard-editor-icon] {
+        visibility: hidden !important;
+      }
     `;
     doc.head.appendChild(style);
   }

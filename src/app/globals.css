@@ -285,3 +285,7 @@ body {
   top: var(--ifake-export-input-nudge);
   line-height: 22px;
 }
+
+.ifake-export-capture [data-keyboard-editor-icon] {
+  visibility: hidden !important;
+}
